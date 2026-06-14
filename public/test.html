@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acme Corp - Sandbox Demo</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f1f5f9;
+      color: #1e293b;
+    }
+    .header {
+      background-color: #ffffff;
+      padding: 24px 40px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo {
+      font-size: 20px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .hero {
+      max-width: 800px;
+      margin: 80px auto;
+      padding: 0 24px;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: 40px;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+    .hero p {
+      font-size: 18px;
+      color: #475569;
+      line-height: 1.6;
+    }
+    .card {
+      background: #ffffff;
+      padding: 32px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+      margin-top: 40px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="logo">Acme Corp</div>
+    <div>Sandbox Website</div>
+  </header>
+
+  <main class="hero">
+    <h1>Acme E-Commerce Shop</h1>
+    <p>This is a sandbox host website demonstrating the AI Customer Support Chatbot Widget. Look at the bottom-right corner of the page to find the chat floating button!</p>
+    
+    <div class="card">
+      <h3>Instructions:</h3>
+      <ol>
+        <li>Start `npm run dev` in the terminal.</li>
+        <li>Open `http://localhost:3000` (Platform landing page).</li>
+        <li>Go to <strong>Enter Dashboard</strong> (use any email/password to log in in Sandbox mode).</li>
+        <li>Open this page at `http://localhost:3000/test.html` in another tab.</li>
+        <li>Open the Chatbot bubble, fill in the pre-chat form (Sarah Connor) and click <strong>Start Conversation</strong>.</li>
+        <li>Message the chatbot. Open the <strong>Live Inbox</strong> tab in the dashboard side-by-side to watch the real-time agent takeover and manual override in action!</li>
+      </ol>
+    </div>
+  </main>
+
+  <!-- AI Chatbot Embed script (loads Acme Support Agent sandbox bot) -->
+  <script src="http://localhost:3000/api/widget.js?id=demo-chatbot-id" async></script>
+
+</body>
+</html>
