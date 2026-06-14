@@ -288,7 +288,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
       setInput('');
 
       // Add user message to UI immediately
-      const tempId = Math.random().toString();
+      const tempId = generateTempId();
       setMessages((prev: any) => [
         ...prev,
         { id: tempId, role: 'user', content: userMsgContent, createdAt: new Date() }

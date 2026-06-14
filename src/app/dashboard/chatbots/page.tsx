@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Plus, Edit2, Trash2, Code, Copy, Check, X, Bot, Shield, Terminal, FileText, Link2, BookOpen, Sparkles, Volume2 } from 'lucide-react';
+import Badge from '@/components/Badge';
 import styles from './chatbots.module.css';
 
 interface Chatbot {
@@ -30,6 +31,10 @@ interface RagDoc {
 }
 
 const DEFAULT_PROMPT = 'You are a helpful customer support AI assistant. Be polite, professional, and try to resolve the customer\'s issue. If the user asks for a live human, live agent, or is extremely upset, trigger escalation.';
+
+const generateId = (prefix: string) => {
+  return `${prefix}-${Math.random().toString(36).substring(2, 9)}`;
+};
 
 export default function ChatbotsPage() {
   const [chatbots, setChatbots] = useState<Chatbot[]>([]);
@@ -231,7 +236,7 @@ export default function ChatbotsPage() {
       } else {
         // Create mode
         const newBot: Chatbot = {
-          id: 'bot-' + Math.random().toString(36).substring(2, 9),
+          id: generateId('bot'),
           ...botPayload,
         };
         updatedList.unshift(newBot);
@@ -299,7 +304,7 @@ export default function ChatbotsPage() {
     setUploading(true);
     if (isSandbox) {
       const newDoc: RagDoc = {
-        id: 'doc-' + Math.random().toString(36).substring(2, 9),
+        id: generateId('doc'),
         filename,
         content
       };
@@ -401,16 +406,19 @@ export default function ChatbotsPage() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.actionRow}>
-        <div>
-          <p className={styles.pageDescription}>
-            Create, configure, and generate embed codes for your AI support agents.
-          </p>
+      <div className={styles.header}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <h1 className={styles.title}>Chatbots Manager</h1>
+            <p className={styles.desc}>
+              Create, configure, and generate embed codes for your AI support agents.
+            </p>
+          </div>
+          <button className="btn btn-primary" onClick={handleAddClick}>
+            <Plus size={16} />
+            Create Chatbot
+          </button>
         </div>
-        <button className="btn btn-primary" onClick={handleAddClick}>
-          <Plus size={16} />
-          Create Chatbot
-        </button>
       </div>
 
       {loading && chatbots.length === 0 ? (
@@ -447,9 +455,9 @@ export default function ChatbotsPage() {
                     </span>
                   </div>
                 </div>
-                <span className={`${styles.chatbotStatus} ${bot.status === 'active' ? styles.statusActive : styles.statusInactive}`}>
+                <Badge variant={bot.status === 'active' ? 'success' : 'neutral'} dot>
                   {bot.status === 'active' ? 'Active' : 'Inactive'}
-                </span>
+                </Badge>
               </div>
 
               <p className={styles.chatbotDesc}>

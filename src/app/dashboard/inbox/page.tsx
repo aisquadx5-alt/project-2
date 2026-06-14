@@ -7,7 +7,12 @@ import {
   Monitor, Globe, CheckCircle2, Hand, Paperclip, Smile, FileText, 
   ChevronDown, ListFilter 
 } from 'lucide-react';
+import Badge from '@/components/Badge';
 import styles from './inbox.module.css';
+
+const generateId = (prefix: string) => {
+  return `${prefix}-${Math.random().toString(36).substring(2, 9)}`;
+};
 
 interface Conversation {
   id: string;
@@ -57,12 +62,12 @@ export default function InboxPage() {
   // Helper to get formatted status details
   const getStatusDetails = (conv: Conversation) => {
     if (conv.status === 'escalated') {
-      return { text: 'Needs Agent', class: styles.badgeEscalated };
+      return { text: 'Needs Agent', variant: 'danger' as const };
     }
     if (conv.is_bot_paused) {
-      return { text: 'Active (Agent)', class: styles.badgeAgentActive };
+      return { text: 'Active (Agent)', variant: 'success' as const };
     }
-    return { text: 'AI Handling', class: styles.badgeAiHandling };
+    return { text: 'AI Handling', variant: 'neutral' as const };
   };
 
   // 1. Initial Load: Fetch conversations list
@@ -289,7 +294,7 @@ export default function InboxPage() {
     if (isSandbox) {
       // Mock Sandbox Write
       const newMsg: Message = {
-        id: 'msg-' + Math.random().toString(),
+        id: generateId('msg'),
         conversation_id: activeConv.id,
         sender: 'agent',
         content: messageText,
@@ -361,7 +366,7 @@ export default function InboxPage() {
       setConversations(updatedConvs);
       
       const newSystemMsg: Message = {
-        id: 'msg-' + Math.random().toString(),
+        id: generateId('msg'),
         conversation_id: activeConv.id,
         sender: 'system',
         content: pause ? 'System: AI chatbot has been paused.' : 'System: AI chatbot resumed.',
@@ -409,7 +414,7 @@ export default function InboxPage() {
       <div className={styles.listPanel}>
         <div className={styles.panelHeader}>
           <div className={styles.titleRow}>
-            <h3 className={styles.panelTitle}>Inbox</h3>
+            <h1 className={styles.panelTitle}>Inbox</h1>
             <button className={styles.iconBtn} aria-label="Filter inbox">
               <ListFilter size={16} />
             </button>
@@ -464,9 +469,9 @@ export default function InboxPage() {
                       </div>
                       
                       <div className={styles.badgeRow}>
-                        <span className={`${styles.statusBadge} ${statusDetails.class}`}>
+                        <Badge variant={statusDetails.variant} dot>
                           {statusDetails.text}
-                        </span>
+                        </Badge>
                       </div>
                       
                       <p className={styles.snippetText}>

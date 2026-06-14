@@ -22,6 +22,18 @@ interface WebhookEndpoint {
   status: 'active';
 }
 
+const generateApiKeyString = () => {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const randomChars = Array.from({ length: 22 }, () => {
+    return chars.charAt(Math.floor(Math.random() * chars.length));
+  }).join('');
+  return `sk_live_${randomChars}`;
+};
+
+const generateId = (prefix: string) => {
+  return `${prefix}-${Math.random().toString(36).substring(2, 9)}`;
+};
+
 export default function IntegrationsPage() {
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [webhooks, setWebhooks] = useState<WebhookEndpoint[]>([]);
@@ -100,16 +112,10 @@ export default function IntegrationsPage() {
     e.preventDefault();
     const label = newKeyName.trim() || 'Default API Key';
 
-    // Generate randomized characters for secret token
-    const randomChars = Array.from({ length: 22 }, () => {
-      const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-      return chars.charAt(Math.floor(Math.random() * chars.length));
-    }).join('');
-    
-    const keyString = `sk_live_${randomChars}`;
+    const keyString = generateApiKeyString();
 
     const newKey: ApiKey = {
-      id: 'key-' + Math.random().toString(36).substring(2, 9),
+      id: generateId('key'),
       name: label,
       key: keyString,
       created_at: new Date().toISOString(),
@@ -165,7 +171,7 @@ export default function IntegrationsPage() {
     }
 
     const newWebhook: WebhookEndpoint = {
-      id: 'wh-' + Math.random().toString(36).substring(2, 9),
+      id: generateId('wh'),
       url: targetUrl,
       created_at: new Date().toISOString(),
       status: 'active',

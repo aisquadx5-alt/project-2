@@ -55,6 +55,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return 'Dashboard';
   };
 
+  const getSearchPlaceholder = () => {
+    if (pathname.includes('/chatbots')) return 'Search chatbots...';
+    if (pathname.includes('/inbox')) return 'Search conversations...';
+    if (pathname.includes('/knowledge-base')) return 'Search sources...';
+    if (pathname.includes('/leads')) return 'Search leads...';
+    if (pathname.includes('/integrations')) return 'Search integrations...';
+    if (pathname.includes('/analytics')) return 'Search metrics...';
+    if (pathname.includes('/settings')) return 'Search settings...';
+    return 'Search...';
+  };
+
   if (!user) {
     return (
       <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}>
@@ -181,18 +192,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Search size={16} className={styles.searchIcon} />
               <input 
                 type="text" 
-                placeholder="Search conversations..." 
+                placeholder={getSearchPlaceholder()} 
                 className={styles.searchInput} 
+                aria-label={getSearchPlaceholder()}
               />
             </div>
             
             {isSandbox && (
-              <span className={styles.userBadge} title="Running in Local Sandbox fallback">
+              <span className={styles.userBadge} title="Environment is running in test mode">
                 Sandbox Mode
               </span>
             )}
             
-            <div className={styles.profileAvatarBadge} title={user?.email || 'User Session'}>
+            <div 
+              className={styles.profileAvatarBadge} 
+              title={user?.email || 'User Session'}
+              aria-label="User profile"
+            >
               {(user?.email || 'U').charAt(0).toUpperCase()}
             </div>
           </div>

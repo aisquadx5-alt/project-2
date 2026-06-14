@@ -5,6 +5,7 @@ import {
   Database, Upload, Plus, Loader, Trash2, 
   Check, AlertCircle, FileText, Globe, Search 
 } from 'lucide-react';
+import Badge from '@/components/Badge';
 import styles from './knowledge-base.module.css';
 
 interface KnowledgeSource {
@@ -15,6 +16,10 @@ interface KnowledgeSource {
   created_at: string;
   size?: string;
 }
+
+const generateId = (prefix: string) => {
+  return `${prefix}-${Math.random().toString(36).substring(2, 9)}`;
+};
 
 export default function KnowledgeBasePage() {
   const [sources, setSources] = useState<KnowledgeSource[]>([]);
@@ -119,7 +124,7 @@ export default function KnowledgeBasePage() {
           setScrapeStep('Vectorizing knowledge content...');
           setTimeout(() => {
             const newSource: KnowledgeSource = {
-              id: 'source-' + Math.random().toString(36).substring(2, 9),
+              id: generateId('source'),
               type: 'url',
               name: formattedUrl,
               status: 'trained',
@@ -199,7 +204,7 @@ export default function KnowledgeBasePage() {
           clearInterval(interval);
           setTimeout(() => {
             const newSource: KnowledgeSource = {
-              id: 'source-' + Math.random().toString(36).substring(2, 9),
+              id: generateId('source'),
               type: 'file',
               name: selectedFile.name,
               status: 'trained',
@@ -411,6 +416,7 @@ export default function KnowledgeBasePage() {
                 style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '12.5px', color: 'var(--text)', width: '100%' }}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Search training sources"
               />
             </div>
           </div>
@@ -454,10 +460,7 @@ export default function KnowledgeBasePage() {
                         </span>
                       </td>
                       <td>
-                        <span className={`${styles.statusBadge} ${styles.statusTrained}`}>
-                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--success)' }} />
-                          Trained
-                        </span>
+                        <Badge variant="success" dot>Trained</Badge>
                       </td>
                       <td>
                         {new Date(source.created_at).toLocaleDateString(undefined, {
