@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Plus, Edit2, Trash2, Code, Copy, Check, X, Bot, Shield, Terminal, FileText, Link2, BookOpen, Sparkles, Volume2 } from 'lucide-react';
 import Badge from '@/components/Badge';
+import { createChatbot, updateChatbot, deleteChatbot } from '../actions';
 import styles from './chatbots.module.css';
 
 interface Chatbot {
@@ -109,24 +110,7 @@ export default function ChatbotsPage() {
         if (localDataStr) {
           setChatbots(JSON.parse(localDataStr));
         } else {
-          // Seed initial default chatbot in sandbox
-          const seedBot: Chatbot = {
-            id: 'demo-chatbot-id',
-            name: 'Acme Support Agent',
-            description: 'AI customer support bot for handling tickets and product FAQs.',
-            system_prompt: DEFAULT_PROMPT,
-            status: 'active',
-            widget_color: '#000000',
-            avatar_url: null,
-            domain_allowlist: '*',
-            pre_chat_enabled: true,
-            pre_chat_fields: { name: true, email: true },
-            welcome_message: 'Hi! How can we help you today?',
-            tone_of_voice: 'professional',
-            starter_questions: ['How do I reset my password?', 'What are your pricing plans?']
-          };
-          localStorage.setItem('uipro_sandbox_chatbots', JSON.stringify([seedBot]));
-          setChatbots([seedBot]);
+          setChatbots([]);
         }
       }
       setLoading(false);
@@ -248,27 +232,23 @@ export default function ChatbotsPage() {
     } else {
       if (currentChatbot) {
         // Edit mode
-        const { error } = await supabase
-          .from('chatbots')
-          .update(botPayload)
-          .eq('id', currentChatbot.id);
+        const res = await updateChatbot(currentChatbot.id, botPayload);
         
-        if (!error) {
+        if (res.success && res.chatbot) {
           setChatbots(chatbots.map(b => b.id === currentChatbot.id ? { ...b, ...botPayload } : b));
           setShowFormModal(false);
+        } else {
+          alert(res.error || 'Failed to update chatbot.');
         }
       } else {
         // Create mode
-        const newBotPayload = { ...botPayload, owner_id: userId };
-        const { data, error } = await supabase
-          .from('chatbots')
-          .insert(newBotPayload)
-          .select()
-          .single();
+        const res = await createChatbot(botPayload);
         
-        if (!error && data) {
-          setChatbots([data, ...chatbots]);
+        if (res.success && res.chatbot) {
+          setChatbots([res.chatbot as any, ...chatbots]);
           setShowFormModal(false);
+        } else {
+          alert(res.error || 'Failed to create chatbot.');
         }
       }
     }
@@ -285,13 +265,12 @@ export default function ChatbotsPage() {
       localStorage.setItem('uipro_sandbox_chatbots', JSON.stringify(updatedList));
       setChatbots(updatedList);
     } else {
-      const { error } = await supabase
-        .from('chatbots')
-        .delete()
-        .eq('id', id);
+      const res = await deleteChatbot(id);
       
-      if (!error) {
+      if (res.success) {
         setChatbots(chatbots.filter(b => b.id !== id));
+      } else {
+        alert(res.error || 'Failed to delete chatbot.');
       }
     }
     setLoading(false);

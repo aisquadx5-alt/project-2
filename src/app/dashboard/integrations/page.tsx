@@ -59,32 +59,13 @@ export default function IntegrationsPage() {
       if (localKeys) {
         setApiKeys(JSON.parse(localKeys));
       } else {
-        const defaultKeys: ApiKey[] = [
-          {
-            id: 'key-1',
-            name: 'Production Website Widget',
-            key: 'sk_live_5h8f2k9a3m1p0q7x9v6z8w',
-            created_at: new Date(Date.now() - 86400000 * 5).toISOString(),
-            status: 'active',
-          }
-        ];
-        localStorage.setItem('uipro_api_keys', JSON.stringify(defaultKeys));
-        setApiKeys(defaultKeys);
+        setApiKeys([]);
       }
 
       if (localWebhooks) {
         setWebhooks(JSON.parse(localWebhooks));
       } else {
-        const defaultWebhooks: WebhookEndpoint[] = [
-          {
-            id: 'wh-1',
-            url: 'https://api.acme-crm.com/v1/webhooks/bot-contacts',
-            created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
-            status: 'active',
-          }
-        ];
-        localStorage.setItem('uipro_webhooks', JSON.stringify(defaultWebhooks));
-        setWebhooks(defaultWebhooks);
+        setWebhooks([]);
       }
     }, 0);
   }, []);

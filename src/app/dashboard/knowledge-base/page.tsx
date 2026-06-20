@@ -51,25 +51,7 @@ export default function KnowledgeBasePage() {
       if (localSources) {
         setSources(JSON.parse(localSources));
       } else {
-        const defaultSources: KnowledgeSource[] = [
-          {
-            id: 'source-1',
-            type: 'url',
-            name: 'https://docs.acme-enterprise.com/faq',
-            status: 'trained',
-            created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-          },
-          {
-            id: 'source-2',
-            type: 'file',
-            name: 'product_refund_policy.pdf',
-            status: 'trained',
-            created_at: new Date(Date.now() - 86400000).toISOString(),
-            size: '1.2 MB',
-          }
-        ];
-        localStorage.setItem('uipro_knowledge_sources', JSON.stringify(defaultSources));
-        setSources(defaultSources);
+        setSources([]);
       }
     }, 0);
   }, []);

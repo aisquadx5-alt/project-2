@@ -105,80 +105,21 @@ export default function InboxPage() {
         }
       } else if (demoUserStr) {
         setIsSandbox(true);
-        // Seed mock data for sandbox
         const localConvStr = localStorage.getItem('uipro_sandbox_conversations');
         if (localConvStr) {
           setConversations(JSON.parse(localConvStr));
         } else {
-          const seedConvs: Conversation[] = [
-            {
-              id: 'conv-1',
-              chatbot_id: 'demo-chatbot-id',
-              visitor_name: 'Sarah Miller',
-              visitor_email: 'sarah.m@example.com',
-              session_id: '892-A-session-uuid',
-              status: 'escalated',
-              browser: 'Safari',
-              page_url: 'https://example.com/checkout',
-              is_bot_paused: true,
-              created_at: new Date(Date.now() - 3600000).toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-            {
-              id: 'conv-2',
-              chatbot_id: 'demo-chatbot-id',
-              visitor_name: 'John Doe',
-              visitor_email: 'john.d@example.com',
-              session_id: '123-B-session-uuid',
-              status: 'active',
-              browser: 'Chrome',
-              page_url: 'https://example.com/pricing',
-              is_bot_paused: false,
-              created_at: new Date(Date.now() - 7200000).toISOString(),
-              updated_at: new Date(Date.now() - 1200000).toISOString(),
-            },
-            {
-              id: 'conv-3',
-              chatbot_id: 'demo-chatbot-id',
-              visitor_name: 'Alex Kumar',
-              visitor_email: 'alex.k@example.com',
-              session_id: '456-C-session-uuid',
-              status: 'active',
-              browser: 'Chrome',
-              page_url: 'https://example.com/pricing',
-              is_bot_paused: true,
-              created_at: new Date(Date.now() - 14400000).toISOString(),
-              updated_at: new Date(Date.now() - 900000).toISOString(),
-            }
-          ];
-          localStorage.setItem('uipro_sandbox_conversations', JSON.stringify(seedConvs));
-          setConversations(seedConvs);
-
-          // Seed mock messages
-          const seedMessages: Record<string, Message[]> = {
-            'conv-1': [
-              { id: 'm-1-1', conversation_id: 'conv-1', sender: 'user', content: "Hi, I've been trying to reset my password but the link in the email keeps expiring before I can use it. It's happening repeatedly.", created_at: new Date(Date.now() - 60000).toISOString() },
-              { id: 'm-1-2', conversation_id: 'conv-1', sender: 'bot', content: "I understand that's frustrating, Sarah. The password reset links expire after 15 minutes for security reasons. I can generate a specialized secure link for you that lasts for 24 hours. Would you like me to send that to sarah.m@example.com?", created_at: new Date(Date.now() - 50000).toISOString() },
-              { id: 'm-1-3', conversation_id: 'conv-1', sender: 'user', content: "Yes please, that would be great. Also, can a human agent verify why my account was locked in the first place?", created_at: new Date(Date.now() - 40000).toISOString() }
-            ],
-            'conv-2': [
-              { id: 'm-2-1', conversation_id: 'conv-2', sender: 'user', content: 'How do I upgrade my billing plan?', created_at: new Date(Date.now() - 7100000).toISOString() }
-            ],
-            'conv-3': [
-              { id: 'm-3-1', conversation_id: 'conv-3', sender: 'user', content: 'Thanks, that solved my issue perfectly.', created_at: new Date(Date.now() - 14300000).toISOString() }
-            ]
-          };
-          localStorage.setItem('uipro_sandbox_messages', JSON.stringify(seedMessages));
+          setConversations([]);
         }
 
-        // Load sandbox last messages
+        // Load sandbox last messages if any
         const localMsgsStr = localStorage.getItem('uipro_sandbox_messages');
         if (localMsgsStr) {
           const allMsgs = JSON.parse(localMsgsStr);
           const lastMsgMap: Record<string, string> = {};
           Object.keys(allMsgs).forEach((convId) => {
             const list = allMsgs[convId];
-            if (list.length > 0) {
+            if (list && list.length > 0) {
               lastMsgMap[convId] = list[list.length - 1].content;
             }
           });
