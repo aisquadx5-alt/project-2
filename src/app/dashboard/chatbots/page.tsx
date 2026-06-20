@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Plus, Edit2, Trash2, Code, Copy, Check, X, Bot, Shield, Terminal, FileText, Link2, BookOpen, Sparkles, Volume2 } from 'lucide-react';
 import Badge from '@/components/Badge';
-import { createChatbot, updateChatbot, deleteChatbot } from '../actions';
+import { createChatbotAction, updateChatbot, deleteChatbot } from '../actions';
 import styles from './chatbots.module.css';
 
 interface Chatbot {
@@ -22,6 +22,7 @@ interface Chatbot {
   tone_of_voice?: string;
   starter_questions?: string[];
   owner_id?: string;
+  user_id?: string;
   created_at?: string;
 }
 
@@ -99,7 +100,6 @@ export default function ChatbotsPage() {
         const { data, error } = await supabase
           .from('chatbots')
           .select('*')
-          .eq('owner_id', session.user.id)
           .order('created_at', { ascending: false });
 
         if (!error && data) {
@@ -243,13 +243,25 @@ export default function ChatbotsPage() {
         }
       } else {
         // Create mode
-        const res = await createChatbot(botPayload);
-        
-        if (res.success && res.chatbot) {
-          setChatbots([res.chatbot as any, ...chatbots]);
+        const actionFormData = new FormData();
+        actionFormData.append('name', formData.name);
+        actionFormData.append('description', formData.description);
+        actionFormData.append('system_prompt', formData.system_prompt);
+        actionFormData.append('status', formData.status);
+        actionFormData.append('widget_color', formData.widget_color);
+        actionFormData.append('domain_allowlist', formData.domain_allowlist);
+        actionFormData.append('pre_chat_enabled', String(formData.pre_chat_enabled));
+        actionFormData.append('pre_chat_fields', JSON.stringify(formData.pre_chat_fields));
+        actionFormData.append('welcome_message', formData.welcome_message);
+        actionFormData.append('tone_of_voice', formData.tone_of_voice);
+        actionFormData.append('starter_questions', JSON.stringify(formData.starter_questions));
+
+        try {
+          const newBot = await createChatbotAction(actionFormData);
+          setChatbots([newBot as any, ...chatbots]);
           setShowFormModal(false);
-        } else {
-          alert(res.error || 'Failed to create chatbot.');
+        } catch (err: any) {
+          alert(err.message || 'Failed to create chatbot.');
         }
       }
     }
