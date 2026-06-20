@@ -42,17 +42,17 @@ export async function createChatbot(botPayload: {
     const { data, error } = await supabase
       .from('chatbots')
       .insert({
-        name: botPayload.name,
-        description: botPayload.description,
-        system_prompt: botPayload.system_prompt,
-        status: botPayload.status,
-        widget_color: botPayload.widget_color,
-        domain_allowlist: botPayload.domain_allowlist,
-        pre_chat_enabled: botPayload.pre_chat_enabled,
-        pre_chat_fields: botPayload.pre_chat_fields,
-        welcome_message: botPayload.welcome_message,
-        tone_of_voice: botPayload.tone_of_voice,
-        starter_questions: botPayload.starter_questions,
+        name: botPayload.name || 'AI Support Agent',
+        description: botPayload.description || '',
+        system_prompt: botPayload.system_prompt || 'You are a helpful assistant.',
+        status: botPayload.status || 'active',
+        widget_color: botPayload.widget_color || '#7C3AED',
+        domain_allowlist: botPayload.domain_allowlist || '*',
+        pre_chat_enabled: botPayload.pre_chat_enabled ?? false,
+        pre_chat_fields: botPayload.pre_chat_fields || { name: true, email: true },
+        welcome_message: botPayload.welcome_message || 'Hi! How can we help you today?',
+        tone_of_voice: botPayload.tone_of_voice || 'professional',
+        starter_questions: botPayload.starter_questions || [],
         owner_id: user.id,
       })
       .select()
@@ -94,17 +94,17 @@ export async function updateChatbot(id: string, botPayload: {
     const { data, error } = await supabase
       .from('chatbots')
       .update({
-        name: botPayload.name,
-        description: botPayload.description,
-        system_prompt: botPayload.system_prompt,
-        status: botPayload.status,
-        widget_color: botPayload.widget_color,
-        domain_allowlist: botPayload.domain_allowlist,
-        pre_chat_enabled: botPayload.pre_chat_enabled,
-        pre_chat_fields: botPayload.pre_chat_fields,
-        welcome_message: botPayload.welcome_message,
-        tone_of_voice: botPayload.tone_of_voice,
-        starter_questions: botPayload.starter_questions,
+        name: botPayload.name || 'AI Support Agent',
+        description: botPayload.description || '',
+        system_prompt: botPayload.system_prompt || 'You are a helpful assistant.',
+        status: botPayload.status || 'active',
+        widget_color: botPayload.widget_color || '#7C3AED',
+        domain_allowlist: botPayload.domain_allowlist || '*',
+        pre_chat_enabled: botPayload.pre_chat_enabled ?? false,
+        pre_chat_fields: botPayload.pre_chat_fields || { name: true, email: true },
+        welcome_message: botPayload.welcome_message || 'Hi! How can we help you today?',
+        tone_of_voice: botPayload.tone_of_voice || 'professional',
+        starter_questions: botPayload.starter_questions || [],
       })
       .eq('id', id)
       .eq('owner_id', user.id)

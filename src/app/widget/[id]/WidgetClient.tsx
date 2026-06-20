@@ -29,6 +29,15 @@ function generateTempId() {
 }
 
 export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: WidgetClientProps) {
+  // Safe fallback configuration variables
+  const widgetColor = chatbot.widget_color || '#7C3AED';
+  const chatbotName = chatbot.name || 'AI Support Agent';
+  const welcomeMessage = chatbot.welcome_message || 'Hi! How can we help you today?';
+  const preChatFields = chatbot.pre_chat_fields || { name: true, email: true };
+  const preChatEnabled = chatbot.pre_chat_enabled || false;
+  const starterQuestions = chatbot.starter_questions || [];
+  const avatarUrl = chatbot.avatar_url || null;
+
   const [isOpen, setIsOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [conversation, setConversation] = useState<any>(null);
@@ -176,7 +185,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
         }
       } else {
         // No conversation exists
-        if (chatbot.pre_chat_enabled) {
+        if (preChatEnabled) {
           setShowPreChat(true);
         } else {
           await createConversation();
@@ -328,7 +337,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
       <button 
         className={styles.launcherBtn}
         onClick={toggleWidget}
-        style={{ backgroundColor: chatbot.widget_color }}
+        style={{ backgroundColor: widgetColor }}
         aria-label="Open Chat"
       >
         <MessageCircle size={28} color="#ffffff" className={styles.launcherIcon} />
@@ -340,17 +349,17 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
   return (
     <div className={styles.chatWindow}>
       {/* HEADER */}
-      <header className={styles.chatHeader} style={{ backgroundColor: chatbot.widget_color }}>
+      <header className={styles.chatHeader} style={{ backgroundColor: widgetColor }}>
         <div className={styles.headerInfo}>
-          {chatbot.avatar_url ? (
-            <img src={chatbot.avatar_url} alt="Avatar" className={styles.avatar} />
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="Avatar" className={styles.avatar} />
           ) : (
             <div className={styles.defaultAvatar}>
               <Bot size={18} color="#ffffff" />
             </div>
           )}
           <div>
-            <h4 className={styles.chatbotName}>{chatbot.name}</h4>
+            <h4 className={styles.chatbotName}>{chatbotName}</h4>
             <div className={styles.statusIndicator}>
               <div className={styles.statusPingContainer}>
                 <span className={styles.statusPing}></span>
@@ -375,7 +384,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
             <p className={styles.preChatIntro}>
               Welcome! Please fill in your details to begin the chat.
             </p>
-            {chatbot.pre_chat_fields.name && (
+            {preChatFields.name && (
               <div className={styles.formGroup}>
                 <label htmlFor="pre-chat-name">Name</label>
                 <input
@@ -388,7 +397,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
                 />
               </div>
             )}
-            {chatbot.pre_chat_fields.email && (
+            {preChatFields.email && (
               <div className={styles.formGroup}>
                 <label htmlFor="pre-chat-email">Email</label>
                 <input
@@ -404,7 +413,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
             <button 
               type="submit" 
               className={styles.submitBtn}
-              style={{ backgroundColor: chatbot.widget_color }}
+              style={{ backgroundColor: widgetColor }}
             >
               Start Conversation
             </button>
@@ -419,16 +428,16 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
             <div className={styles.msgRowBot}>
               <div 
                 className={styles.msgBubbleBot}
-                style={{ backgroundColor: chatbot.widget_color }}
+                style={{ backgroundColor: widgetColor }}
               >
-                {chatbot.welcome_message || 'Hi! How can we help you today?'}
+                {welcomeMessage}
               </div>
             </div>
 
             {/* Icebreaker starter questions */}
-            {messages.length === 0 && chatbot.starter_questions && chatbot.starter_questions.length > 0 && (
+            {messages.length === 0 && starterQuestions && starterQuestions.length > 0 && (
               <div className={styles.starterQuestionsContainer}>
-                {chatbot.starter_questions.map((q: string, idx: number) => (
+                {starterQuestions.map((q: string, idx: number) => (
                   <button 
                     key={idx} 
                     type="button" 
@@ -458,7 +467,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
                 >
                   <div 
                     className={isUser ? styles.msgBubbleUser : styles.msgBubbleBot}
-                    style={!isUser ? { backgroundColor: chatbot.widget_color } : undefined}
+                    style={!isUser ? { backgroundColor: widgetColor } : undefined}
                   >
                     {m.content}
                   </div>
@@ -476,7 +485,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
               <div className={styles.msgRowBot}>
                 <div 
                   className={styles.msgBubbleBot}
-                  style={{ backgroundColor: chatbot.widget_color, height: '38px', display: 'flex', alignItems: 'center' }}
+                  style={{ backgroundColor: widgetColor, height: '38px', display: 'flex', alignItems: 'center' }}
                 >
                   <div className={styles.typingIndicator}>
                     <span className={styles.typingDot}></span>
@@ -515,7 +524,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
             <button 
               type="submit" 
               className={styles.sendBtn}
-              style={{ backgroundColor: chatbot.widget_color }}
+              style={{ backgroundColor: widgetColor }}
               disabled={!input.trim() || showPreChat}
               aria-label="Send Message"
             >

@@ -99,6 +99,7 @@ export default function ChatbotsPage() {
         const { data, error } = await supabase
           .from('chatbots')
           .select('*')
+          .eq('owner_id', session.user.id)
           .order('created_at', { ascending: false });
 
         if (!error && data) {
