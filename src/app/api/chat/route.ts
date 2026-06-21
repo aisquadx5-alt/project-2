@@ -216,9 +216,9 @@ export async function POST(req: Request) {
 
     // Return the response stream to the client
     return (result as any).toDataStreamResponse();
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in /api/chat:', error);
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+    return new Response(JSON.stringify({ error: error?.message || 'Internal Server Error' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
