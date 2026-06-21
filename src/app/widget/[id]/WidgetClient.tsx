@@ -358,18 +358,33 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
         }
       } else {
         // Standard AI stream submit
-        handleSubmit(e, {
-          body: {
-            conversationId: activeConv.id,
-            chatbotId: safeChatbot.id,
-          }
-        } as any);
+        try {
+          console.log("Attempting to send message via append...");
+          await append({
+            role: 'user',
+            content: userMsgContent,
+          }, {
+            body: {
+              conversationId: activeConv.id,
+              chatbotId: safeChatbot.id,
+            }
+          } as any);
+          console.log("Message successfully sent via append.");
+        } catch (appendErr: any) {
+          console.warn("append failed, trying handleSubmit fallback:", appendErr);
+          handleSubmit(e, {
+            body: {
+              conversationId: activeConv.id,
+              chatbotId: safeChatbot.id,
+            }
+          } as any);
+        }
         setLocalInput('');
         setInput(''); // Clear input manually
       }
     } catch (err: any) {
       console.error("Error in handleSendMessage:", err);
-      alert("Error sending message: " + err.message);
+      alert("Error sending message: " + err.message + "\nStack: " + err.stack);
     }
   };
 
