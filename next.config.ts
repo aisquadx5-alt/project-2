@@ -8,7 +8,11 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "frame-ancestors *; script-src 'self' 'unsafe-inline' 'unsafe-eval';",
+            value: "frame-ancestors *;",
+          },
+          {
+            key: "Access-Control-Allow-Origin",
+            value: "*",
           },
         ],
       },

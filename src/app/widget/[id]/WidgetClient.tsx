@@ -30,13 +30,14 @@ function generateTempId() {
 
 export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: WidgetClientProps) {
   // Safe fallback configuration variables
-  const widgetColor = chatbot.widget_color || '#7C3AED';
-  const chatbotName = chatbot.name || 'AI Support Agent';
-  const welcomeMessage = chatbot.welcome_message || 'Hi! How can we help you today?';
-  const preChatFields = chatbot.pre_chat_fields || { name: true, email: true };
-  const preChatEnabled = chatbot.pre_chat_enabled || false;
-  const starterQuestions = chatbot.starter_questions || [];
-  const avatarUrl = chatbot.avatar_url || null;
+  const safeChatbot = chatbot || {} as any;
+  const widgetColor = safeChatbot.widget_color || (safeChatbot as any).branding_color || '#7C3AED';
+  const chatbotName = safeChatbot.name || 'AI Support Agent';
+  const welcomeMessage = safeChatbot.welcome_message || 'Hi! How can we help you today?';
+  const preChatFields = safeChatbot.pre_chat_fields || { name: true, email: true };
+  const preChatEnabled = safeChatbot.pre_chat_enabled || false;
+  const starterQuestions = safeChatbot.starter_questions || [];
+  const avatarUrl = safeChatbot.avatar_url || null;
 
   const [isOpen, setIsOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -68,7 +69,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
     api: '/api/chat',
     body: {
       conversationId: conversation?.id,
-      chatbotId: chatbot.id,
+      chatbotId: safeChatbot.id,
     },
     onFinish: (message: any) => {
       // Re-fetch conversation status to check if LLM tool-calling triggered escalation
@@ -131,7 +132,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
     const { data: newConv, error } = await visitorSupabase
       .from('conversations')
       .insert({
-        chatbot_id: chatbot.id,
+        chatbot_id: safeChatbot.id,
         session_id: sessionId,
         visitor_name: name || null,
         visitor_email: email || null,
@@ -158,7 +159,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
         .from('conversations')
         .select('*')
         .eq('session_id', sessionId)
-        .eq('chatbot_id', chatbot.id)
+        .eq('chatbot_id', safeChatbot.id)
         .maybeSingle();
 
       if (existingConv) {
@@ -195,7 +196,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
     }
 
     loadSession();
-  }, [sessionId, chatbot.id]);
+  }, [sessionId, safeChatbot.id]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
