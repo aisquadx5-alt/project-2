@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { useChat } from '@ai-sdk/react';
 import { createVisitorSupabaseClient } from '@/lib/supabase';
 import { MessageCircle, X, Send, Bot, AlertCircle } from 'lucide-react';
 import styles from './widget.module.css';
@@ -68,54 +67,13 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
     return createVisitorSupabaseClient(safeSessionId);
   }, [safeSessionId]);
 
-  // useChat hook from Vercel AI SDK
-  const { 
-    messages, 
-    setMessages, 
-    input, 
-    handleInputChange, 
-    handleSubmit, 
-    isLoading,
-    setInput,
-    append
-  } = useChat({
-    api: '/api/chat',
-    body: {
-      conversationId: conversation?.id,
-      chatbotId: safeChatbot.id,
-    },
-    onFinish: (message: any) => {
-      // Re-fetch conversation status to check if LLM tool-calling triggered escalation
-      checkConversationStatus();
-    }
-  } as any) as any;
+  // Local state for chat message history, loading, and inputs (bypasses minified Vercel AI SDK runtime incompatibilities)
+  const [messages, setMessages] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Handler for quick-reply starter questions (icebreakers)
   const handleIcebreakerClick = async (question: string) => {
-    if (!conversation?.id || !visitorSupabase) return;
-
-    if (isBotPaused) {
-      // Add user message to UI immediately
-      const tempId = generateTempId();
-      setMessages((prev: any) => [
-        ...prev,
-        { id: tempId, role: 'user', content: question, createdAt: new Date() }
-      ]);
-
-      // Save user message to Supabase (agent will reply to this)
-      await visitorSupabase
-        .from('messages')
-        .insert({
-          conversation_id: conversation.id,
-          sender: 'user',
-          content: question
-        });
-    } else {
-      append({
-        role: 'user',
-        content: question
-      } as any);
-    }
+    await sendCustomMessage(question);
   };
 
   // Check conversation status to see if it is escalated or paused
@@ -315,13 +273,11 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
     }
   };
 
-  // Custom send handler to intercept manual override (isBotPaused) state
-  const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    console.log("Send Button Clicked. Input (useChat):", input, "localInput:", localInput);
-    const userMsgContent = localInput;
-    if (!(userMsgContent || '').trim() || !visitorSupabase) return;
+  // Custom message sender that implements client-side stream reading of the Vercel AI SDK protocol (bypasses minified runtime hook crashes)
+  const sendCustomMessage = async (content: string) => {
+    if (!content.trim() || !visitorSupabase) return;
 
+    setIsLoading(true);
     try {
       let activeConv = conversation;
       
@@ -333,59 +289,110 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
         }
       }
 
-      if (isBotPaused) {
-        setLocalInput('');
-        setInput('');
-        
-        // Add user message to UI immediately
-        const tempId = generateTempId();
-        setMessages((prev: any) => [
-          ...prev,
-          { id: tempId, role: 'user', content: userMsgContent, createdAt: new Date() }
-        ]);
+      // 1. Save user message to UI immediately
+      const userMsgId = generateTempId();
+      const userMsg = { id: userMsgId, role: 'user', content: content, createdAt: new Date() };
+      setMessages((prev: any) => [...prev, userMsg]);
 
-        // Save user message to Supabase (agent will reply to this)
-        const { error: insertError } = await visitorSupabase
-          .from('messages')
-          .insert({
-            conversation_id: activeConv.id,
-            sender: 'user',
-            content: userMsgContent
-          });
+      // 2. Save user message to Supabase
+      const { error: insertError } = await visitorSupabase
+        .from('messages')
+        .insert({
+          conversation_id: activeConv.id,
+          sender: 'user',
+          content: content
+        });
 
-        if (insertError) {
-          throw new Error("Failed to save message to database: " + insertError.message);
-        }
-      } else {
-        // Standard AI stream submit
-        try {
-          console.log("Attempting to send message via append...");
-          await append({
-            role: 'user',
-            content: userMsgContent,
-          }, {
-            body: {
-              conversationId: activeConv.id,
-              chatbotId: safeChatbot.id,
-            }
-          } as any);
-          console.log("Message successfully sent via append.");
-        } catch (appendErr: any) {
-          console.warn("append failed, trying handleSubmit fallback:", appendErr);
-          handleSubmit(e, {
-            body: {
-              conversationId: activeConv.id,
-              chatbotId: safeChatbot.id,
-            }
-          } as any);
-        }
-        setLocalInput('');
-        setInput(''); // Clear input manually
+      if (insertError) {
+        throw new Error("Failed to save message to database: " + insertError.message);
       }
+
+      if (isBotPaused) {
+        // If bot is paused (human agent active), the bot shouldn't reply.
+        setIsLoading(false);
+        return;
+      }
+
+      // 3. Request bot reply from `/api/chat`
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId: activeConv.id,
+          chatbotId: safeChatbot.id,
+          message: content,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Server responded with status " + response.status);
+      }
+
+      // 4. Handle streaming response
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) {
+        throw new Error("Response body is not readable.");
+      }
+
+      const botMsgId = generateTempId();
+      // Add empty placeholder message for bot response
+      setMessages((prev: any) => [
+        ...prev,
+        { id: botMsgId, role: 'assistant', content: '', createdAt: new Date() }
+      ]);
+
+      let botContent = '';
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        
+        // Parse the buffer line by line
+        let newlineIndex = buffer.indexOf('\n');
+        while (newlineIndex !== -1) {
+          const line = buffer.substring(0, newlineIndex).trim();
+          buffer = buffer.substring(newlineIndex + 1);
+          
+          // Vercel AI SDK Data Stream Protocol:
+          // Text chunk format is: 0:"text"
+          if (line.startsWith('0:')) {
+            try {
+              const textChunk = JSON.parse(line.substring(2));
+              botContent += textChunk;
+              
+              // Update the message in UI
+              setMessages((prev: any) => prev.map((m: any) => 
+                m.id === botMsgId ? { ...m, content: botContent } : m
+              ));
+            } catch (parseErr) {
+              console.warn("Failed to parse stream line:", line, parseErr);
+            }
+          }
+          
+          newlineIndex = buffer.indexOf('\n');
+        }
+      }
+
+      // Re-fetch conversation status to check if LLM tool-calling triggered escalation
+      await checkConversationStatus();
     } catch (err: any) {
-      console.error("Error in handleSendMessage:", err);
+      console.error("Error sending message:", err);
       alert("Error sending message: " + err.message + "\nStack: " + err.stack);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  // Custom send handler to intercept manual override (isBotPaused) state
+  const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const content = localInput;
+    setLocalInput('');
+    await sendCustomMessage(content);
   };
 
   const formatTime = (date?: any) => {
@@ -405,7 +412,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
   // Force chat window open unconditionally inside this iframe view for the presentation
   // (We do not render the minimized bubble launcher button inside the iframe)
 
-  console.log("WidgetClient Render. Input:", input, "localInput:", localInput);
+  console.log("WidgetClient Render. localInput:", localInput);
 
   // EXPANDED STATE (Chat Window)
   return (
@@ -580,10 +587,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
               className={styles.chatInput}
               placeholder={isBotPaused ? "Message agent..." : "Type your message..."}
               value={localInput}
-              onChange={(e) => {
-                setLocalInput(e.target.value);
-                handleInputChange(e);
-              }}
+              onChange={(e) => setLocalInput(e.target.value)}
               disabled={showPreChat}
               style={{ backgroundColor: '#ffffff', color: '#000000', border: '1px solid #e5e7eb' }}
             />
