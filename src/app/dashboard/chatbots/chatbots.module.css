@@ -131,7 +131,7 @@
 }
 
 .iconBtn:hover {
-  background-color: #f3f4f6;
+  background-color: var(--surface-container-high);
   color: var(--text);
 }
 
@@ -142,8 +142,8 @@
   font-family: 'Inter', sans-serif;
   font-size: 12px;
   font-weight: 500;
-  color: #111827;
-  background-color: #ffffff;
+  color: var(--text);
+  background-color: var(--card-bg);
   border: 1px solid var(--border);
   padding: 6px 12px;
   border-radius: 6px;
@@ -152,7 +152,7 @@
 }
 
 .btnEmbed:hover {
-  background-color: #f9fafb;
+  background-color: var(--surface-container-low);
 }
 
 /* MODAL PANEL */
@@ -225,7 +225,7 @@
 }
 
 .modalClose:hover {
-  background-color: #f3f4f6;
+  background-color: var(--surface-container-high);
   color: var(--text);
 }
 

@@ -115,7 +115,7 @@
 .barTrack {
   flex: 1;
   height: 8px;
-  background-color: #f3f4f6;
+  background-color: var(--surface-container-high);
   border-radius: 4px;
   overflow: hidden;
 }

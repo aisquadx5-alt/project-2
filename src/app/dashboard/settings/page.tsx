@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Settings, Users, UserPlus, Check, Plus } from 'lucide-react';
+import { Settings, Users, UserPlus, Check, Plus, Palette } from 'lucide-react';
 import styles from './settings.module.css';
 
 interface TeamMember {
@@ -12,6 +12,19 @@ interface TeamMember {
   role: 'owner' | 'admin' | 'agent';
   joined_at: string;
 }
+
+interface ThemeConfig {
+  id: string;
+  name: string;
+  colors: string[]; // Primary, Secondary, Background, Card
+}
+
+const THEMES: ThemeConfig[] = [
+  { id: 'default', name: 'Default Light', colors: ['#000000', '#006c49', '#f9f9ff', '#ffffff'] },
+  { id: 'dark', name: 'Midnight', colors: ['#3b82f6', '#10b981', '#090d16', '#111827'] },
+  { id: 'sunset', name: 'Sunset', colors: ['#8b5cf6', '#f59e0b', '#120e1a', '#1e172a'] },
+  { id: 'forest', name: 'Forest', colors: ['#10b981', '#a3e635', '#0b0f0b', '#131913'] },
+];
 
 function generateMemberId() {
   return 'member-' + Math.random().toString(36).substring(2, 9);
@@ -24,12 +37,17 @@ export default function SettingsPage() {
   const [inviteRole, setInviteRole] = useState<'admin' | 'agent'>('agent');
   const [inviteName, setInviteName] = useState('');
   const [toastMessage, setToastMessage] = useState('');
+  const [currentTheme, setCurrentTheme] = useState('default');
 
   useEffect(() => {
     async function loadSettings() {
       setLoading(true);
       const demoUserStr = localStorage.getItem('uipro_demo_user');
       const { data: { session } } = await supabase.auth.getSession();
+
+      // Load theme
+      const savedTheme = localStorage.getItem('uipro_theme') || 'default';
+      setCurrentTheme(savedTheme);
 
       if (session) {
         const localTeam = localStorage.getItem('uipro_team_members');
@@ -61,6 +79,19 @@ export default function SettingsPage() {
 
     loadSettings();
   }, []);
+
+  const handleSelectTheme = (themeId: string) => {
+    localStorage.setItem('uipro_theme', themeId);
+    setCurrentTheme(themeId);
+
+    // Apply class globally to HTML tag
+    document.documentElement.className = '';
+    if (themeId !== 'default') {
+      document.documentElement.classList.add(`theme-${themeId}`);
+    }
+
+    showToast(`${THEMES.find(t => t.id === themeId)?.name} theme applied successfully.`);
+  };
 
   const handleInviteMember = (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,6 +147,46 @@ export default function SettingsPage() {
           <span>{toastMessage}</span>
         </div>
       )}
+
+      {/* THEME SELECTION */}
+      <section className={styles.sectionCard}>
+        <div className={styles.sectionHeader}>
+          <Palette size={20} className={styles.sectionIcon} />
+          <div>
+            <h3 className={styles.sectionTitle}>Appearance & Themes</h3>
+            <p className={styles.sectionDesc}>Customize the look and feel of your enterprise support dashboard.</p>
+          </div>
+        </div>
+
+        <div className={styles.themeGrid}>
+          {THEMES.map(theme => (
+            <div 
+              key={theme.id} 
+              className={`${styles.themeOption} ${currentTheme === theme.id ? styles.activeThemeOption : ''}`}
+              onClick={() => handleSelectTheme(theme.id)}
+            >
+              <div className={styles.themeHeader}>
+                <span className={styles.themeLabel}>{theme.name}</span>
+                {currentTheme === theme.id && (
+                  <span className={styles.themeCheck}>
+                    <Check size={12} />
+                  </span>
+                )}
+              </div>
+              <div className={styles.themePalette}>
+                {theme.colors.map((color, idx) => (
+                  <div 
+                    key={idx} 
+                    className={styles.colorSwatch} 
+                    style={{ backgroundColor: color }}
+                    title={idx === 0 ? 'Primary' : idx === 1 ? 'Secondary' : idx === 2 ? 'Background' : 'Card'}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* TEAM MEMBERS LIST */}
       <section className={styles.sectionCard}>

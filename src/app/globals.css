@@ -59,6 +59,76 @@
   }
 }
 
+/* Custom Themes */
+.theme-dark {
+  --background: #090d16;
+  --card-bg: #111827;
+  --text: #f3f4f6;
+  --text-muted: #9ca3af;
+  --text-light: #6b7280;
+  --border: #1f2937;
+  --border-variant: #374151;
+  --primary: #3b82f6;
+  --primary-light: #60a5fa;
+  --primary-dark: #2563eb;
+  --secondary: #10b981;
+  --secondary-light: #34d399;
+  --surface-container-lowest: #111827;
+  --surface-container-low: #090d16;
+  --surface-container: #1f2937;
+  --surface-container-high: #374151;
+  --surface-container-highest: #4b5563;
+  --outline-variant: #374151;
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+}
+
+.theme-sunset {
+  --background: #120e1a;
+  --card-bg: #1e172a;
+  --text: #fdfaff;
+  --text-muted: #b3a8c4;
+  --text-light: #857896;
+  --border: #2e253e;
+  --border-variant: #433658;
+  --primary: #8b5cf6;
+  --primary-light: #a78bfa;
+  --primary-dark: #7c3aed;
+  --secondary: #f59e0b;
+  --secondary-light: #fbbf24;
+  --surface-container-lowest: #1e172a;
+  --surface-container-low: #120e1a;
+  --surface-container: #2c2140;
+  --surface-container-high: #433658;
+  --surface-container-highest: #5c4d75;
+  --outline-variant: #433658;
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+}
+
+.theme-forest {
+  --background: #0b0f0b;
+  --card-bg: #131913;
+  --text: #f2f7f2;
+  --text-muted: #9ab09a;
+  --text-light: #6b806b;
+  --border: #1e261e;
+  --border-variant: #2f3d2f;
+  --primary: #10b981;
+  --primary-light: #34d399;
+  --primary-dark: #059669;
+  --secondary: #a3e635;
+  --secondary-light: #bef264;
+  --surface-container-lowest: #131913;
+  --surface-container-low: #0b0f0b;
+  --surface-container: #222d22;
+  --surface-container-high: #2f3d2f;
+  --surface-container-highest: #405340;
+  --outline-variant: #2f3d2f;
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;

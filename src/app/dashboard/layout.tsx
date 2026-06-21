@@ -37,6 +37,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
 
     checkAuth();
+
+    // Theme initialization
+    const savedTheme = localStorage.getItem('uipro_theme') || 'default';
+    document.documentElement.className = '';
+    if (savedTheme !== 'default') {
+      document.documentElement.classList.add(`theme-${savedTheme}`);
+    }
   }, [router]);
 
   const handleLogout = async () => {

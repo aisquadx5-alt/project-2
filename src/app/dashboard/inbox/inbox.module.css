@@ -55,13 +55,13 @@
 }
 
 .iconBtn:hover {
-  background-color: #f3f4f6;
+  background-color: var(--surface-container-high);
   color: var(--text);
 }
 
 .filterTabs {
   display: flex;
-  background-color: #f3f4f6;
+  background-color: var(--surface-container-low);
   padding: 2px;
   border-radius: 6px;
   gap: 2px;
@@ -87,8 +87,8 @@
 }
 
 .filterTabActive {
-  background-color: #ffffff;
-  color: #000000;
+  background-color: var(--card-bg);
+  color: var(--text);
   font-weight: 600;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
@@ -188,8 +188,8 @@
 }
 
 .badgeAiHandling {
-  background-color: #f3f4f6;
-  color: #6b7280;
+  background-color: var(--surface-container-high);
+  color: var(--text-muted);
 }
 
 .snippetText {
@@ -287,7 +287,7 @@
 .threadIdLabel {
   font-size: 11px;
   font-family: monospace;
-  background-color: #f3f4f6;
+  background-color: var(--surface-container-high);
   color: var(--text-muted);
   padding: 1px 4px;
   border-radius: 3px;
@@ -341,7 +341,7 @@
   font-size: 12px;
   font-weight: 500;
   color: #ffffff;
-  background-color: #0f172a;
+  background-color: var(--primary);
   border: none;
   padding: 6px 12px;
   border-radius: 6px;
@@ -449,11 +449,11 @@
   align-self: flex-end;
 }
 
-.botIconBadge, .agentIconBadge {
+.botIconBadge {
   width: 20px;
   height: 20px;
   border-radius: 9999px;
-  background-color: #1e293b;
+  background-color: var(--primary);
   color: #ffffff;
   display: flex;
   align-items: center;
@@ -464,12 +464,22 @@
 }
 
 .agentIconBadge {
-  background-color: #006c49;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background-color: var(--secondary);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* SYSTEM MESSAGES & BANNERS */
 .systemBubble {
-  background-color: #ffffff;
+  background-color: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 6px 12px;
@@ -563,7 +573,7 @@
 }
 
 .toolbarBtn:hover {
-  background-color: #f3f4f6;
+  background-color: var(--surface-container-high);
   color: var(--text);
 }
 
@@ -577,8 +587,8 @@
   font-family: 'Inter', sans-serif;
   font-size: 11px;
   font-weight: 500;
-  color: #111827;
-  background-color: #ffffff;
+  color: var(--text);
+  background-color: var(--card-bg);
   border: 1px solid var(--border);
   padding: 5px 10px;
   border-radius: 4px;
@@ -587,7 +597,7 @@
 }
 
 .btnEscalate:hover {
-  background-color: #f3f4f6;
+  background-color: var(--surface-container-high);
 }
 
 .btnSendReply {
@@ -595,7 +605,7 @@
   font-size: 11px;
   font-weight: 500;
   color: #ffffff;
-  background-color: #0f172a;
+  background-color: var(--primary);
   border: none;
   padding: 5px 12px;
   border-radius: 4px;
