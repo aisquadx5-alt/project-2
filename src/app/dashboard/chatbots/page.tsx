@@ -194,6 +194,15 @@ export default function ChatbotsPage() {
   const handleSubmit = async (actionFormData: FormData) => {
     setLoading(true);
     try {
+      // Get the current session client-side to pass the token as a fallback
+      let clientToken: string | undefined;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        clientToken = session?.access_token || undefined;
+      } catch (e) {
+        console.warn('Failed to retrieve access token:', e);
+      }
+
       if (currentChatbot) {
         // Edit mode
         const botPayload = {
@@ -219,7 +228,7 @@ export default function ChatbotsPage() {
           setChatbots(updatedList);
           setShowFormModal(false);
         } else {
-          const res = await updateChatbot(currentChatbot.id, botPayload);
+          const res = await updateChatbot(currentChatbot.id, botPayload, clientToken);
           if (res.success && res.chatbot) {
             setChatbots(chatbots.map(b => b.id === currentChatbot.id ? { ...b, ...botPayload } : b));
             setShowFormModal(false);
@@ -229,6 +238,9 @@ export default function ChatbotsPage() {
         }
       } else {
         // Create mode
+        if (clientToken) {
+          actionFormData.append('access_token', clientToken);
+        }
         await createChatbotAction(actionFormData);
         alert("Success!"); // Let me see it succeeded
         window.location.reload(); // Quick refresh to show new data
@@ -250,7 +262,15 @@ export default function ChatbotsPage() {
       localStorage.setItem('uipro_sandbox_chatbots', JSON.stringify(updatedList));
       setChatbots(updatedList);
     } else {
-      const res = await deleteChatbot(id);
+      let clientToken: string | undefined;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        clientToken = session?.access_token || undefined;
+      } catch (e) {
+        console.warn('Failed to retrieve access token:', e);
+      }
+
+      const res = await deleteChatbot(id, clientToken);
       
       if (res.success) {
         setChatbots(chatbots.filter(b => b.id !== id));

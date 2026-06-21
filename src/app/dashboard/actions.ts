@@ -5,6 +5,35 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+async function getSupabaseClient(token?: string) {
+  const cookieStore = await cookies();
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // Ignored if called from a Server Component.
+          }
+        },
+      },
+      global: token ? {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      } : undefined,
+    }
+  );
+}
+
 export async function logout() {
   try {
     const supabase = await createClient();
@@ -20,16 +49,8 @@ export async function logout() {
 }
 
 export async function createChatbotAction(formData: FormData) {
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) { return cookieStore.get(name)?.value; },
-      },
-    }
-  );
+  const token = formData.get('access_token') as string;
+  const supabase = await getSupabaseClient(token);
 
   // 1. Get current logged-in user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -107,9 +128,9 @@ export async function updateChatbot(id: string, botPayload: {
   welcome_message: string;
   tone_of_voice: string;
   starter_questions: string[];
-}) {
+}, token?: string) {
   try {
-    const supabase = await createClient();
+    const supabase = await getSupabaseClient(token);
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
@@ -148,9 +169,9 @@ export async function updateChatbot(id: string, botPayload: {
   }
 }
 
-export async function deleteChatbot(id: string) {
+export async function deleteChatbot(id: string, token?: string) {
   try {
-    const supabase = await createClient();
+    const supabase = await getSupabaseClient(token);
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
@@ -174,4 +195,3 @@ export async function deleteChatbot(id: string) {
     return { error: err.message || 'An unexpected error occurred.' };
   }
 }
-
