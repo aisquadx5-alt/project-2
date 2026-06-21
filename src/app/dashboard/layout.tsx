@@ -46,7 +46,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       console.warn('SignOut error:', e);
     }
     localStorage.clear();
-    window.location.href = '/login';
+    // Clear demo auth cookie to prevent middleware redirect loops
+    document.cookie = 'uipro_demo_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+    window.location.replace('/login');
   };
 
   const getPageTitle = () => {

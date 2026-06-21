@@ -1,6 +1,7 @@
 'use server';
 
 import { createServerClient } from '@supabase/ssr';
+import { revalidatePath } from 'next/cache';
 
 export async function logout() {
   // Stub for MVP presentation
@@ -69,6 +70,7 @@ export async function createChatbotAction(formData: FormData) {
     throw new Error(error.message);
   }
 
+  revalidatePath('/dashboard/chatbots');
   return data;
 }
 
@@ -118,6 +120,7 @@ export async function updateChatbot(id: string, botPayload: {
       return { error: error.message };
     }
 
+    revalidatePath('/dashboard/chatbots');
     return { success: true, chatbot: data };
   } catch (err: any) {
     console.error('Unexpected error in updateChatbot:', err);
@@ -145,6 +148,7 @@ export async function deleteChatbot(id: string, providedUserId?: string) {
       return { error: error.message };
     }
 
+    revalidatePath('/dashboard/chatbots');
     return { success: true };
   } catch (err: any) {
     console.error('Unexpected error in deleteChatbot:', err);
