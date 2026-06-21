@@ -91,12 +91,17 @@ export default function ChatbotsPage() {
       setLoading(true);
       
       const demoUserStr = localStorage.getItem('uipro_demo_user');
-      const { data: { session } } = await supabase.auth.getSession();
       
-      if (session) {
-        setUserId(session.user.id);
+      if (demoUserStr) {
+        setIsSandbox(true);
+        const localDataStr = localStorage.getItem('uipro_sandbox_chatbots');
+        if (localDataStr) {
+          setChatbots(JSON.parse(localDataStr));
+        } else {
+          setChatbots([]);
+        }
+      } else {
         setIsSandbox(false);
-        
         const { data, error } = await supabase
           .from('chatbots')
           .select('*')
@@ -105,15 +110,18 @@ export default function ChatbotsPage() {
         if (!error && data) {
           setChatbots(data);
         }
-      } else if (demoUserStr) {
-        setIsSandbox(true);
-        const localDataStr = localStorage.getItem('uipro_sandbox_chatbots');
-        if (localDataStr) {
-          setChatbots(JSON.parse(localDataStr));
-        } else {
-          setChatbots([]);
-        }
       }
+
+      // Fetch user ID client-side if available
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setUserId(session.user.id);
+        }
+      } catch (e) {
+        console.warn('Failed to retrieve user ID:', e);
+      }
+
       setLoading(false);
     }
 
@@ -426,7 +434,7 @@ export default function ChatbotsPage() {
       ) : (
         /* CARDS GRID */
         <div className={styles.grid}>
-          {chatbots.map((bot) => (
+          {(chatbots || []).map((bot) => (
             <div key={bot.id} className={styles.chatbotCard}>
               <div className={styles.cardHeader}>
                 <div className={styles.cardInfo}>
