@@ -40,17 +40,17 @@ export default async function WidgetPage({ params, searchParams }: Props) {
   // Fallback chatbot config if database query failed or returned null (ensures zero crashing)
   const safeChatbot = {
     id: chatbotId,
-    name: chatbot?.name || 'AI Support Assistant',
-    description: chatbot?.description || 'Online Customer Support',
-    system_prompt: chatbot?.system_prompt || 'You are a helpful customer support AI assistant.',
+    name: (chatbot?.name || 'AI Support Assistant').trim(),
+    description: (chatbot?.description || 'Online Customer Support').trim(),
+    system_prompt: (chatbot?.system_prompt || 'You are a helpful customer support AI assistant.').trim(),
     status: 'active', // Force active status for presentation
-    widget_color: chatbot?.widget_color || (chatbot as any)?.branding_color || '#7C3AED',
+    widget_color: (chatbot?.widget_color || (chatbot as any)?.branding_color || '#7C3AED').trim(),
     avatar_url: chatbot?.avatar_url || null,
-    domain_allowlist: chatbot?.domain_allowlist || '*',
+    domain_allowlist: (chatbot?.domain_allowlist || '*').trim(),
     pre_chat_enabled: chatbot?.pre_chat_enabled ?? false,
     pre_chat_fields: chatbot?.pre_chat_fields || { name: true, email: true },
-    welcome_message: chatbot?.welcome_message || 'Hi! How can we help you today?',
-    tone_of_voice: chatbot?.tone_of_voice || 'professional',
+    welcome_message: (chatbot?.welcome_message || 'Hi! How can we help you today?').trim(),
+    tone_of_voice: (chatbot?.tone_of_voice || 'professional').trim(),
     starter_questions: chatbot?.starter_questions || [],
   };
 

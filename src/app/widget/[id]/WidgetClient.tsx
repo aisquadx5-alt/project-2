@@ -44,13 +44,13 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
     });
   }, [sessionId]);
   const safeChatbot = chatbot || {} as any;
-  const widgetColor = safeChatbot.widget_color || (safeChatbot as any).branding_color || '#7C3AED';
-  const chatbotName = safeChatbot.name || 'AI Support Agent';
-  const welcomeMessage = safeChatbot.welcome_message || 'Hi! How can we help you today?';
-  const preChatFields = safeChatbot.pre_chat_fields || { name: true, email: true };
-  const preChatEnabled = safeChatbot.pre_chat_enabled || false;
-  const starterQuestions = safeChatbot.starter_questions || [];
-  const avatarUrl = safeChatbot.avatar_url || null;
+  const widgetColor = (safeChatbot?.widget_color || (safeChatbot as any)?.branding_color || '#7C3AED').trim();
+  const chatbotName = (safeChatbot?.name || 'AI Support Agent').trim();
+  const welcomeMessage = (safeChatbot?.welcome_message || 'Hi! How can we help you today?').trim();
+  const preChatFields = safeChatbot?.pre_chat_fields || { name: true, email: true };
+  const preChatEnabled = safeChatbot?.pre_chat_enabled || false;
+  const starterQuestions = safeChatbot?.starter_questions || [];
+  const avatarUrl = safeChatbot?.avatar_url || null;
 
   const [isOpen, setIsOpen] = useState(true); // Force widget open for the presentation
   const [isInitialized, setIsInitialized] = useState(false);
@@ -567,7 +567,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
               type="submit" 
               className={styles.sendBtn}
               style={{ backgroundColor: widgetColor }}
-              disabled={!input.trim()}
+              disabled={!(input || '').trim()}
               aria-label="Send Message"
             >
               <Send size={16} color="#ffffff" />
