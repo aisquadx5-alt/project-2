@@ -1,13 +1,13 @@
 import { streamText } from 'ai';
 import { z } from 'zod';
 import { openrouter } from '@/lib/openai-provider';
-import { supabase } from '@/lib/supabase';
+import { supabase, createVisitorSupabaseClient } from '@/lib/supabase';
 import { waitUntil } from '@vercel/functions';
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { conversationId, chatbotId } = body;
+    const { conversationId, chatbotId, sessionId } = body;
     const message = body.message || (body.messages && body.messages.length > 0 ? body.messages[body.messages.length - 1].content : '');
 
     if (!conversationId || !message || !chatbotId) {
@@ -16,6 +16,8 @@ export async function POST(req: Request) {
         headers: { 'Content-Type': 'application/json' },
       });
     }
+
+    const dbClient = sessionId ? createVisitorSupabaseClient(sessionId) : supabase;
 
     // 1. Fetch Chatbot Settings and Validate Referrer/Origin
     const { data: chatbot, error: chatbotError } = await supabase
@@ -42,7 +44,7 @@ export async function POST(req: Request) {
     const isDomainAllowed = true;
 
     // 2. Fetch Conversation Status (Agent Lockout check)
-    const { data: conversation, error: convError } = await supabase
+    const { data: conversation, error: convError } = await dbClient
       .from('conversations')
       .select('*')
       .eq('id', conversationId)
@@ -70,7 +72,7 @@ export async function POST(req: Request) {
     }
 
     // 3. Save User Message to Supabase (synchronously before starting AI completion)
-    const { error: msgSaveError } = await supabase
+    const { error: msgSaveError } = await dbClient
       .from('messages')
       .insert({
         conversation_id: conversationId,
@@ -87,7 +89,7 @@ export async function POST(req: Request) {
     }
 
     // 4. Retrieve message history (sliding context window - last 12 messages)
-    const { data: history, error: historyError } = await supabase
+    const { data: history, error: historyError } = await dbClient
       .from('messages')
       .select('*')
       .eq('conversation_id', conversationId)
@@ -173,13 +175,13 @@ export async function POST(req: Request) {
           console.log(`[Escalating chat] Conversation: ${conversationId}. Reason: ${args.reason}`);
 
           // Update conversation in database
-          await supabase
+          await dbClient
             .from('conversations')
             .update({ status: 'escalated', is_bot_paused: true })
             .eq('id', conversationId);
 
           // Add System Message notifying escalation
-          await supabase
+          await dbClient
             .from('messages')
             .insert({
               conversation_id: conversationId,
@@ -189,7 +191,7 @@ export async function POST(req: Request) {
 
           // Add Bot's final response if any text was output before/during the tool call
           if (text && text.trim().length > 0) {
-            await supabase
+            await dbClient
               .from('messages')
               .insert({
                 conversation_id: conversationId,
@@ -199,7 +201,7 @@ export async function POST(req: Request) {
           }
         } else if (text && text.trim().length > 0) {
           // Standard AI message save
-          await supabase
+          await dbClient
             .from('messages')
             .insert({
               conversation_id: conversationId,

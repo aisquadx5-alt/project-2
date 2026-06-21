@@ -320,12 +320,20 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
         body: JSON.stringify({
           conversationId: activeConv.id,
           chatbotId: safeChatbot.id,
+          sessionId: safeSessionId,
           message: content,
         }),
       });
 
       if (!response.ok) {
-        throw new Error("Server responded with status " + response.status);
+        let errMsg = `Server responded with status ${response.status}`;
+        try {
+          const errData = await response.json();
+          if (errData && errData.error) {
+            errMsg = `${errData.error} (Status ${response.status})`;
+          }
+        } catch {}
+        throw new Error(errMsg);
       }
 
       // 4. Handle streaming response
