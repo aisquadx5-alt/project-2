@@ -317,6 +317,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
   // Custom send handler to intercept manual override (isBotPaused) state
   const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log("Send Button Clicked. Input:", input);
     const userMsgContent = input;
     if (!(userMsgContent || '').trim() || !visitorSupabase) return;
 
@@ -385,6 +386,8 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
 
   // Force chat window open unconditionally inside this iframe view for the presentation
   // (We do not render the minimized bubble launcher button inside the iframe)
+
+  console.log("WidgetClient Render. Input:", input);
 
   // EXPANDED STATE (Chat Window)
   return (
