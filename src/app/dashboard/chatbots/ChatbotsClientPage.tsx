@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Plus, Edit2, Trash2, Code, Copy, Check, X, Bot, Shield, Terminal, FileText, Link2, BookOpen, Sparkles, Volume2 } from 'lucide-react';
 import Badge from '@/components/Badge';
-import { createChatbotAction, updateChatbot, deleteChatbot } from '../actions';
+import { createChatbotAction, updateChatbot, deleteChatbot, linkChatbotOwnershipAction } from '../actions';
 import styles from './chatbots.module.css';
 
 // Initialize strictly client-side
@@ -315,6 +315,25 @@ export default function ChatbotManagerUI() {
       localStorage.setItem(`uipro_rag_docs_${currentChatbot.id}`, JSON.stringify(updatedDocs));
       setDocuments(updatedDocs);
     } else {
+      // 1. Ensure chatbot ownership is linked to the current user in Supabase
+      let clientUserId = userId;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id) {
+          clientUserId = user.id;
+        }
+      } catch (authErr) {
+        console.warn("Failed to get user directly from client:", authErr);
+      }
+
+      if (clientUserId) {
+        const linkRes = await linkChatbotOwnershipAction(currentChatbot.id, clientUserId);
+        if (linkRes.error) {
+          console.warn("Failed to automatically link ownership:", linkRes.error);
+        }
+      }
+
+      // 2. Perform the document insert
       const { data, error } = await supabase
         .from('chatbot_documents')
         .insert({
@@ -327,6 +346,9 @@ export default function ChatbotManagerUI() {
 
       if (!error && data) {
         setDocuments([...documents, data]);
+      } else if (error) {
+        console.error("Error inserting document:", error);
+        alert(`Failed to save document: ${error.message}`);
       }
     }
     setUploading(false);
@@ -381,6 +403,9 @@ export default function ChatbotManagerUI() {
 
       if (!error) {
         setDocuments(documents.filter(d => d.id !== docId));
+      } else {
+        console.error("Error deleting document:", error);
+        alert(`Failed to delete document: ${error.message}`);
       }
     }
     setUploading(false);

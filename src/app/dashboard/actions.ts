@@ -28,7 +28,9 @@ export async function createChatbotAction(formData: FormData) {
   const starterQuestionsStr = formData.get('starter_questions') as string;
   const starterQuestions = starterQuestionsStr ? JSON.parse(starterQuestionsStr) : [];
 
+  const clientUserId = formData.get('user_id') as string;
   const hardcodedUserId = 'b4d326bf-85f7-421d-a00e-d34c57e4e6af';
+  const userIdToUse = clientUserId || hardcodedUserId;
 
   const insertPayload: any = { 
     name: name || 'New Chatbot',
@@ -42,7 +44,8 @@ export async function createChatbotAction(formData: FormData) {
     welcome_message: welcomeMessage || 'Hi! How can we help you today?',
     tone_of_voice: toneOfVoice || 'professional',
     starter_questions: starterQuestions,
-    user_id: hardcodedUserId,
+    user_id: userIdToUse,
+    owner_id: userIdToUse,
   };
 
   let { data, error } = await supabase
@@ -53,7 +56,19 @@ export async function createChatbotAction(formData: FormData) {
 
   if (error && (error.message.includes('column "user_id" does not exist') || error.code === '42703')) {
     delete insertPayload.user_id;
-    insertPayload.owner_id = hardcodedUserId;
+    insertPayload.owner_id = userIdToUse;
+
+    const fallbackResult = await supabase
+      .from('chatbots')
+      .insert([insertPayload])
+      .select()
+      .single();
+
+    data = fallbackResult.data;
+    error = fallbackResult.error;
+  } else if (error && (error.message.includes('column "owner_id" does not exist') || error.code === '42703')) {
+    delete insertPayload.owner_id;
+    insertPayload.user_id = userIdToUse;
 
     const fallbackResult = await supabase
       .from('chatbots')
@@ -89,31 +104,57 @@ export async function updateChatbot(id: string, botPayload: {
 }, providedUserId?: string) {
   try {
     const hardcodedUserId = 'b4d326bf-85f7-421d-a00e-d34c57e4e6af';
+    const userIdToUse = providedUserId || hardcodedUserId;
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       { cookies: { get() { return null; }, set() {}, remove() {} } }
     );
 
-    const { data, error } = await supabase
+    const updatePayload: any = {
+      name: botPayload.name || 'AI Support Agent',
+      description: botPayload.description || '',
+      system_prompt: botPayload.system_prompt || 'You are a helpful assistant.',
+      status: botPayload.status || 'active',
+      widget_color: botPayload.widget_color || '#7C3AED',
+      domain_allowlist: botPayload.domain_allowlist || '*',
+      pre_chat_enabled: botPayload.pre_chat_enabled ?? false,
+      pre_chat_fields: botPayload.pre_chat_fields || { name: true, email: true },
+      welcome_message: botPayload.welcome_message || 'Hi! How can we help you today?',
+      tone_of_voice: botPayload.tone_of_voice || 'professional',
+      starter_questions: botPayload.starter_questions || [],
+      user_id: userIdToUse,
+      owner_id: userIdToUse,
+    };
+
+    let { data, error } = await supabase
       .from('chatbots')
-      .update({
-        name: botPayload.name || 'AI Support Agent',
-        description: botPayload.description || '',
-        system_prompt: botPayload.system_prompt || 'You are a helpful assistant.',
-        status: botPayload.status || 'active',
-        widget_color: botPayload.widget_color || '#7C3AED',
-        domain_allowlist: botPayload.domain_allowlist || '*',
-        pre_chat_enabled: botPayload.pre_chat_enabled ?? false,
-        pre_chat_fields: botPayload.pre_chat_fields || { name: true, email: true },
-        welcome_message: botPayload.welcome_message || 'Hi! How can we help you today?',
-        tone_of_voice: botPayload.tone_of_voice || 'professional',
-        starter_questions: botPayload.starter_questions || [],
-      })
+      .update(updatePayload)
       .eq('id', id)
-      .eq('owner_id', hardcodedUserId)
       .select()
       .single();
+
+    if (error && (error.message.includes('column "user_id" does not exist') || error.code === '42703')) {
+      delete updatePayload.user_id;
+      const fallbackResult = await supabase
+        .from('chatbots')
+        .update(updatePayload)
+        .eq('id', id)
+        .select()
+        .single();
+      data = fallbackResult.data;
+      error = fallbackResult.error;
+    } else if (error && (error.message.includes('column "owner_id" does not exist') || error.code === '42703')) {
+      delete updatePayload.owner_id;
+      const fallbackResult = await supabase
+        .from('chatbots')
+        .update(updatePayload)
+        .eq('id', id)
+        .select()
+        .single();
+      data = fallbackResult.data;
+      error = fallbackResult.error;
+    }
 
     if (error) {
       console.error('Error updating chatbot:', error);
@@ -130,7 +171,6 @@ export async function updateChatbot(id: string, botPayload: {
 
 export async function deleteChatbot(id: string, providedUserId?: string) {
   try {
-    const hardcodedUserId = 'b4d326bf-85f7-421d-a00e-d34c57e4e6af';
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -140,8 +180,7 @@ export async function deleteChatbot(id: string, providedUserId?: string) {
     const { error } = await supabase
       .from('chatbots')
       .delete()
-      .eq('id', id)
-      .eq('owner_id', hardcodedUserId);
+      .eq('id', id);
 
     if (error) {
       console.error('Error deleting chatbot:', error);
@@ -155,3 +194,58 @@ export async function deleteChatbot(id: string, providedUserId?: string) {
     return { error: err.message || 'An unexpected error occurred.' };
   }
 }
+
+export async function linkChatbotOwnershipAction(id: string, userId: string) {
+  try {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { get() { return null; }, set() {}, remove() {} } }
+    );
+
+    const updatePayload: any = {
+      user_id: userId,
+      owner_id: userId,
+    };
+
+    let { data, error } = await supabase
+      .from('chatbots')
+      .update(updatePayload)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error && (error.message.includes('column "user_id" does not exist') || error.code === '42703')) {
+      delete updatePayload.user_id;
+      const fallbackResult = await supabase
+        .from('chatbots')
+        .update(updatePayload)
+        .eq('id', id)
+        .select()
+        .single();
+      data = fallbackResult.data;
+      error = fallbackResult.error;
+    } else if (error && (error.message.includes('column "owner_id" does not exist') || error.code === '42703')) {
+      delete updatePayload.owner_id;
+      const fallbackResult = await supabase
+        .from('chatbots')
+        .update(updatePayload)
+        .eq('id', id)
+        .select()
+        .single();
+      data = fallbackResult.data;
+      error = fallbackResult.error;
+    }
+
+    if (error) {
+      console.error('Error linking chatbot ownership:', error);
+      return { error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Unexpected error in linkChatbotOwnershipAction:', err);
+    return { error: err.message || 'An unexpected error occurred.' };
+  }
+}
+
