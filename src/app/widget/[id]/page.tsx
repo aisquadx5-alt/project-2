@@ -61,7 +61,7 @@ export default async function WidgetPage({ params, searchParams }: Props) {
     <main className={styles.widgetMain}>
       <WidgetClient
         chatbot={safeChatbot}
-        sessionId={sessionId || ''}
+        sessionId={sessionId || 'demo-session-id'}
         initialHostUrl={hostUrl || ''}
       />
     </main>

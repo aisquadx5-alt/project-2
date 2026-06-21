@@ -30,6 +30,7 @@ function generateTempId() {
 
 export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: WidgetClientProps) {
   // Safe fallback configuration variables
+  const safeSessionId = sessionId || 'demo-session-id';
   const safeChatbot = chatbot || {} as any;
   const widgetColor = safeChatbot.widget_color || (safeChatbot as any).branding_color || '#7C3AED';
   const chatbotName = safeChatbot.name || 'AI Support Agent';
@@ -39,7 +40,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
   const starterQuestions = safeChatbot.starter_questions || [];
   const avatarUrl = safeChatbot.avatar_url || null;
 
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true); // Force widget open for the presentation
   const [isInitialized, setIsInitialized] = useState(false);
   const [conversation, setConversation] = useState<any>(null);
   const [showPreChat, setShowPreChat] = useState(false);
@@ -51,9 +52,8 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
 
   // Initialize Visitor Supabase Client (RLS secured with x-session-id header)
   const visitorSupabase = useMemo(() => {
-    if (!sessionId) return null;
-    return createVisitorSupabaseClient(sessionId);
-  }, [sessionId]);
+    return createVisitorSupabaseClient(safeSessionId);
+  }, [safeSessionId]);
 
   // useChat hook from Vercel AI SDK
   const { 
@@ -133,7 +133,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
       .from('conversations')
       .insert({
         chatbot_id: safeChatbot.id,
-        session_id: sessionId,
+        session_id: safeSessionId,
         visitor_name: name || null,
         visitor_email: email || null,
         browser: browserName,
@@ -153,12 +153,15 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
   // 1. Initial Load: Check if conversation exists
   useEffect(() => {
     async function loadSession() {
-      if (!visitorSupabase || !sessionId) return;
+      if (!visitorSupabase) {
+        setIsInitialized(true);
+        return;
+      }
 
       const { data: existingConv, error } = await visitorSupabase
         .from('conversations')
         .select('*')
-        .eq('session_id', sessionId)
+        .eq('session_id', safeSessionId)
         .eq('chatbot_id', safeChatbot.id)
         .maybeSingle();
 
@@ -196,7 +199,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
     }
 
     loadSession();
-  }, [sessionId, safeChatbot.id]);
+  }, [safeSessionId, safeChatbot.id]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -329,28 +332,17 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
   };
 
   if (!isInitialized) {
-    return null;
+    return <div style={{ color: '#ffffff', padding: '24px', textAlign: 'center', fontWeight: 'bold', fontFamily: 'sans-serif' }}>Loading support chat...</div>;
   }
 
-  // MINIMIZED STATE (Launcher Bubble)
-  if (!isOpen) {
-    return (
-      <button 
-        className={styles.launcherBtn}
-        onClick={toggleWidget}
-        style={{ backgroundColor: widgetColor }}
-        aria-label="Open Chat"
-      >
-        <MessageCircle size={28} color="#ffffff" className={styles.launcherIcon} />
-      </button>
-    );
-  }
+  // Force chat window open unconditionally inside this iframe view for the presentation
+  // (We do not render the minimized bubble launcher button inside the iframe)
 
   // EXPANDED STATE (Chat Window)
   return (
-    <div className={styles.chatWindow}>
+    <div className={styles.chatWindow} style={{ backgroundColor: '#ffffff', color: '#000000' }}>
       {/* HEADER */}
-      <header className={styles.chatHeader} style={{ backgroundColor: widgetColor }}>
+      <header className={styles.chatHeader} style={{ backgroundColor: widgetColor, color: '#ffffff' }}>
         <div className={styles.headerInfo}>
           {avatarUrl ? (
             <img src={avatarUrl} alt="Avatar" className={styles.avatar} />
@@ -378,7 +370,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
       </header>
 
       {/* BODY */}
-      <div className={styles.chatBody}>
+      <div className={styles.chatBody} style={{ backgroundColor: '#ffffff', color: '#000000' }}>
         {showPreChat ? (
           // PRE-CHAT FORM
           <form className={styles.preChatForm} onSubmit={handlePreChatSubmit}>
@@ -468,7 +460,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
                 >
                   <div 
                     className={isUser ? styles.msgBubbleUser : styles.msgBubbleBot}
-                    style={!isUser ? { backgroundColor: widgetColor } : undefined}
+                    style={isUser ? { backgroundColor: '#f3f4f6', color: '#000000' } : { backgroundColor: widgetColor, color: '#ffffff' }}
                   >
                     {m.content}
                   </div>
@@ -512,8 +504,8 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
 
       {/* FOOTER INPUT */}
       {!showPreChat && (
-        <div className={styles.chatFooter}>
-          <form className={styles.chatInputContainer} onSubmit={handleSendMessage}>
+        <div className={styles.chatFooter} style={{ backgroundColor: '#ffffff' }}>
+          <form className={styles.chatInputContainer} onSubmit={handleSendMessage} style={{ backgroundColor: '#ffffff' }}>
             <input
               type="text"
               className={styles.chatInput}
@@ -521,6 +513,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
               value={input}
               onChange={handleInputChange}
               disabled={showPreChat}
+              style={{ backgroundColor: '#ffffff', color: '#000000', border: '1px solid #e5e7eb' }}
             />
             <button 
               type="submit" 
@@ -529,7 +522,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
               disabled={!input.trim() || showPreChat}
               aria-label="Send Message"
             >
-              <Send size={16} />
+              <Send size={16} color="#ffffff" />
             </button>
           </form>
         </div>
