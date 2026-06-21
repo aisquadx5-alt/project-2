@@ -66,8 +66,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (pathname.includes('/chatbots')) return 'Search chatbots...';
     if (pathname.includes('/inbox')) return 'Search conversations...';
     if (pathname.includes('/knowledge-base')) return 'Search sources...';
-    if (pathname.includes('/leads')) return 'Search leads...';
-    if (pathname.includes('/integrations')) return 'Search integrations...';
     if (pathname.includes('/analytics')) return 'Search metrics...';
     if (pathname.includes('/settings')) return 'Search settings...';
     return 'Search...';
@@ -124,28 +122,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className={styles.navTextContainer}>
               <span className={styles.navLabel}>Knowledge Base</span>
               <span className={styles.navSubtitle}>Train AI on URLs and Documents</span>
-            </div>
-          </Link>
-
-          <Link 
-            href="/dashboard/leads" 
-            className={`${styles.navLink} ${pathname.includes('/leads') ? styles.activeNavLink : ''}`}
-          >
-            <Users size={18} className={styles.navIcon} />
-            <div className={styles.navTextContainer}>
-              <span className={styles.navLabel}>Leads</span>
-              <span className={styles.navSubtitle}>Captured emails and visitor contacts</span>
-            </div>
-          </Link>
-
-          <Link 
-            href="/dashboard/integrations" 
-            className={`${styles.navLink} ${pathname.includes('/integrations') ? styles.activeNavLink : ''}`}
-          >
-            <Plug size={18} className={styles.navIcon} />
-            <div className={styles.navTextContainer}>
-              <span className={styles.navLabel}>Integrations</span>
-              <span className={styles.navSubtitle}>API keys & Webhooks</span>
             </div>
           </Link>
 

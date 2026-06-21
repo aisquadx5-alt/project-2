@@ -19,7 +19,6 @@ function generateMemberId() {
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
-  const [workspaceName, setWorkspaceName] = useState('Acme Operations');
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'admin' | 'agent'>('agent');
@@ -33,9 +32,6 @@ export default function SettingsPage() {
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session) {
-        // Supabase load fallback
-        setWorkspaceName(localStorage.getItem('uipro_workspace_name') || 'Acme Operations');
-        
         const localTeam = localStorage.getItem('uipro_team_members');
         if (localTeam) {
           setTeamMembers(JSON.parse(localTeam));
@@ -47,9 +43,6 @@ export default function SettingsPage() {
           setTeamMembers(initialTeam);
         }
       } else if (demoUserStr) {
-        // Load from sandbox localstorage
-        setWorkspaceName(localStorage.getItem('uipro_workspace_name') || 'Acme Support Hub');
-        
         const localTeam = localStorage.getItem('uipro_team_members');
         if (localTeam) {
           setTeamMembers(JSON.parse(localTeam));
@@ -68,12 +61,6 @@ export default function SettingsPage() {
 
     loadSettings();
   }, []);
-
-  const handleSaveWorkspace = (e: React.FormEvent) => {
-    e.preventDefault();
-    localStorage.setItem('uipro_workspace_name', workspaceName);
-    showToast('Workspace settings saved successfully.');
-  };
 
   const handleInviteMember = (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,34 +116,6 @@ export default function SettingsPage() {
           <span>{toastMessage}</span>
         </div>
       )}
-
-      {/* WORKSPACE PROFILE */}
-      <section className={styles.sectionCard}>
-        <div className={styles.sectionHeader}>
-          <Settings size={20} className={styles.sectionIcon} />
-          <div>
-            <h3 className={styles.sectionTitle}>Workspace Profile</h3>
-            <p className={styles.sectionDesc}>Customize your team workspace information and configuration.</p>
-          </div>
-        </div>
-        
-        <form onSubmit={handleSaveWorkspace} className={styles.form}>
-          <div className={styles.formGroup}>
-            <label htmlFor="workspace-name">Workspace Name</label>
-            <input 
-              id="workspace-name"
-              type="text" 
-              className={styles.input}
-              value={workspaceName} 
-              onChange={(e) => setWorkspaceName(e.target.value)} 
-              required
-            />
-          </div>
-          <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-start' }}>
-            Save Changes
-          </button>
-        </form>
-      </section>
 
       {/* TEAM MEMBERS LIST */}
       <section className={styles.sectionCard}>
