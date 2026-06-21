@@ -567,7 +567,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
               type="submit" 
               className={styles.sendBtn}
               style={{ backgroundColor: widgetColor }}
-              disabled={!(input || '').trim() || showPreChat}
+              disabled={!input.trim()}
               aria-label="Send Message"
             >
               <Send size={16} color="#ffffff" />
