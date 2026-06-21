@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-
 export async function GET() {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
@@ -39,7 +38,48 @@ export async function GET() {
     localStorage.setItem(storageKey, sessionId);
   }
 
-  // Create iframe element
+  // 1. Create Launcher Button (Floating Circle Bubble)
+  const launcher = document.createElement('div');
+  launcher.style.position = 'fixed';
+  launcher.style.bottom = '20px';
+  launcher.style.right = '20px';
+  launcher.style.zIndex = '999999';
+  launcher.style.borderRadius = '50%';
+  launcher.style.cursor = 'pointer';
+  launcher.style.background = '#0F172A';
+  launcher.style.width = '60px';
+  launcher.style.height = '60px';
+  launcher.style.boxShadow = '0 4px 10px rgba(0,0,0,0.2)';
+  launcher.style.display = 'flex';
+  launcher.style.alignItems = 'center';
+  launcher.style.justifyContent = 'center';
+  launcher.style.transition = 'transform 0.2s ease';
+
+  // SVG Chat Icon
+  launcher.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
+  
+  launcher.onmouseover = function() {
+    launcher.style.transform = 'scale(1.05)';
+  };
+  launcher.onmouseout = function() {
+    launcher.style.transform = 'scale(1)';
+  };
+
+  // 2. Create Iframe Container
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.bottom = '90px';
+  container.style.right = '20px';
+  container.style.width = '350px';
+  container.style.height = '500px';
+  container.style.zIndex = '999999';
+  container.style.borderRadius = '12px';
+  container.style.boxShadow = '0 10px 20px rgba(0,0,0,0.2)';
+  container.style.overflow = 'hidden';
+  container.style.display = 'none';
+  container.style.border = 'none';
+
+  // Create Iframe inside Container
   const iframe = document.createElement('iframe');
   const widgetUrl = '${appUrl}/widget/' + chatbotId + 
     '?sessionId=' + sessionId + 
@@ -47,66 +87,48 @@ export async function GET() {
 
   iframe.src = widgetUrl;
   iframe.title = 'AI Customer Support Chatbot';
-  iframe.style.position = 'fixed';
-  iframe.style.bottom = '20px';
-  iframe.style.right = '20px';
-  iframe.style.width = '90px';
-  iframe.style.height = '90px';
+  iframe.style.width = '100%';
+  iframe.style.height = '100%';
   iframe.style.border = 'none';
-  iframe.style.zIndex = '999999';
-  iframe.style.transition = 'width 0.3s ease, height 0.3s ease, transform 0.2s ease';
+  iframe.style.margin = '0';
+  iframe.style.padding = '0';
   iframe.style.background = 'transparent';
   iframe.style.colorScheme = 'light';
   iframe.setAttribute('allow', 'clipboard-write');
 
-  document.body.appendChild(iframe);
+  container.appendChild(iframe);
 
-  // Listen for resize and toggle messages from the iframe
+  // Inject elements
+  document.body.appendChild(launcher);
+  document.body.appendChild(container);
+
+  // 3. Toggle Logic
+  let isOpen = false;
+  launcher.addEventListener('click', function() {
+    isOpen = !isOpen;
+    if (isOpen) {
+      container.style.display = 'block';
+      // Change SVG icon to X Close
+      launcher.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+    } else {
+      container.style.display = 'none';
+      // Change SVG icon back to Chat Bubble
+      launcher.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
+    }
+  });
+
+  // Listen for close/minimize messages from within the iframe
   window.addEventListener('message', function(event) {
-    // Basic source origin check (must match our app URL)
     const expectedOrigin = new URL('${appUrl}').origin;
     if (event.origin !== expectedOrigin) return;
 
     const data = event.data;
     if (data && data.type === 'uipro-chatbot-toggle') {
-      if (data.open) {
-        // Expanded chat state
-        // Check if mobile screen size for responsive sizing
-        if (window.innerWidth < 480) {
-          iframe.style.width = '100%';
-          iframe.style.height = '100%';
-          iframe.style.bottom = '0';
-          iframe.style.right = '0';
-        } else {
-          iframe.style.width = '390px';
-          iframe.style.height = '620px';
-          iframe.style.bottom = '20px';
-          iframe.style.right = '20px';
-        }
-      } else {
-        // Closed/bubble launcher state
-        iframe.style.width = '90px';
-        iframe.style.height = '90px';
-        iframe.style.bottom = '20px';
-        iframe.style.right = '20px';
-      }
-    }
-  });
-
-  // Handle window resizing to keep it responsive
-  window.addEventListener('resize', function() {
-    // Only resize if the iframe is currently expanded
-    if (iframe.style.width === '100%' || parseFloat(iframe.style.width) > 90) {
-      if (window.innerWidth < 480) {
-        iframe.style.width = '100%';
-        iframe.style.height = '100%';
-        iframe.style.bottom = '0';
-        iframe.style.right = '0';
-      } else {
-        iframe.style.width = '390px';
-        iframe.style.height = '620px';
-        iframe.style.bottom = '20px';
-        iframe.style.right = '20px';
+      // If widget minimizes inside the iframe (by clicking close button), sync state
+      if (!data.open) {
+        isOpen = false;
+        container.style.display = 'none';
+        launcher.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
       }
     }
   });
