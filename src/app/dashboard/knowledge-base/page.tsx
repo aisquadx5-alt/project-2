@@ -23,12 +23,6 @@ const generateId = (prefix: string) => {
 
 export default function KnowledgeBasePage() {
   const [sources, setSources] = useState<KnowledgeSource[]>([]);
-  const [activeTab, setActiveTab] = useState<'url' | 'file'>('url');
-  
-  // URL form states
-  const [urlInput, setUrlInput] = useState('');
-  const [isScraping, setIsScraping] = useState(false);
-  const [scrapeStep, setScrapeStep] = useState('');
 
   // File form states
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -68,59 +62,6 @@ export default function KnowledgeBasePage() {
     setTimeout(() => {
       setToastMessage('');
     }, 3000);
-  };
-
-  // URL Scraping Handler
-  const handleScrapeWebsite = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!urlInput.trim()) return;
-
-    // Basic URL validation
-    let formattedUrl = urlInput.trim();
-    if (!/^https?:\/\//i.test(formattedUrl)) {
-      formattedUrl = 'https://' + formattedUrl;
-    }
-
-    try {
-      new URL(formattedUrl);
-    } catch {
-      showToast('Please enter a valid URL.', 'error');
-      return;
-    }
-
-    // Check if source already exists
-    if (sources.some(s => s.name.toLowerCase() === formattedUrl.toLowerCase())) {
-      showToast('This URL is already trained.', 'error');
-      return;
-    }
-
-    setIsScraping(true);
-    setScrapeStep('Connecting to server...');
-
-    // Simulate crawl progression steps
-    setTimeout(() => {
-      setScrapeStep('Fetching website HTML structure...');
-      setTimeout(() => {
-        setScrapeStep('Extracting relevant text details...');
-        setTimeout(() => {
-          setScrapeStep('Vectorizing knowledge content...');
-          setTimeout(() => {
-            const newSource: KnowledgeSource = {
-              id: generateId('source'),
-              type: 'url',
-              name: formattedUrl,
-              status: 'trained',
-              created_at: new Date().toISOString(),
-            };
-            saveSources([newSource, ...sources]);
-            setUrlInput('');
-            setIsScraping(false);
-            setScrapeStep('');
-            showToast('Website crawled and trained successfully.');
-          }, 800);
-        }, 800);
-      }, 800);
-    }, 600);
   };
 
   // File Change Handler
@@ -232,7 +173,7 @@ export default function KnowledgeBasePage() {
       <div className={styles.header}>
         <h1 className={styles.title}>Knowledge Base</h1>
         <p className={styles.desc}>
-          Upload documents and crawl website URLs to feed trained information to your AI chatbot agents.
+          Upload documents (.pdf and .txt) to feed trained information to your AI chatbot agents.
         </p>
       </div>
 
@@ -243,144 +184,82 @@ export default function KnowledgeBasePage() {
             <Plus size={18} /> Add Training Source
           </h2>
           
-          <div className={styles.tabs}>
-            <button 
-              className={`${styles.tabBtn} ${activeTab === 'url' ? styles.activeTabBtn : ''}`}
-              onClick={() => setActiveTab('url')}
-              disabled={isScraping || isUploading}
-            >
-              <Globe size={15} /> Website URL
-            </button>
-            <button 
-              className={`${styles.tabBtn} ${activeTab === 'file' ? styles.activeTabBtn : ''}`}
-              onClick={() => setActiveTab('file')}
-              disabled={isScraping || isUploading}
-            >
-              <Upload size={15} /> Doc Upload
-            </button>
-          </div>
-
-          {activeTab === 'url' ? (
-            <form onSubmit={handleScrapeWebsite} className={styles.form}>
-              <div className={styles.formGroup}>
-                <label htmlFor="url-input">Website URL</label>
-                <input 
-                  id="url-input"
-                  type="text"
-                  className={styles.input}
-                  placeholder="e.g. acme-enterprise.com/faq"
-                  value={urlInput}
-                  onChange={(e) => setUrlInput(e.target.value)}
-                  disabled={isScraping}
-                  required
-                />
-              </div>
-
-              <button 
-                type="submit" 
-                className={styles.btnSubmit}
-                disabled={isScraping || !urlInput.trim()}
+          <div className={styles.form}>
+            <div className={styles.formGroup}>
+              <label>Document Upload</label>
+              <input 
+                type="file"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={handleFileChange}
+                accept=".pdf,.txt"
+                disabled={isUploading}
+              />
+              
+              <div 
+                className={styles.dropzone}
+                onClick={triggerFileSelect}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
               >
-                {isScraping ? (
-                  <>
-                    <Loader size={16} className={styles.spinner} />
-                    Scraping...
-                  </>
-                ) : (
-                  'Scrape Website'
-                )}
-              </button>
-
-              {isScraping && (
-                <div className={styles.progressContainer}>
-                  <div className={styles.progressLabel}>
-                    <span>Web Crawler State</span>
-                    <span>Active</span>
-                  </div>
-                  <p style={{ fontSize: '12.5px', color: 'var(--text-light)', fontStyle: 'italic' }}>
-                    {scrapeStep}
-                  </p>
-                </div>
-              )}
-            </form>
-          ) : (
-            <div className={styles.form}>
-              <div className={styles.formGroup}>
-                <label>Document Upload</label>
-                <input 
-                  type="file"
-                  ref={fileInputRef}
-                  style={{ display: 'none' }}
-                  onChange={handleFileChange}
-                  accept=".pdf,.txt"
-                  disabled={isUploading}
-                />
-                
-                <div 
-                  className={styles.dropzone}
-                  onClick={triggerFileSelect}
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                >
-                  <Upload size={28} className={styles.dropzoneIcon} />
-                  <span className={styles.dropzoneText}>
-                    Drag & drop file here, or <strong style={{ color: 'var(--primary)', textDecoration: 'underline' }}>browse</strong>
-                  </span>
-                  <span className={styles.dropzoneSubtext}>
-                    Supports PDF, TXT (Max size 10MB)
-                  </span>
-                </div>
+                <Upload size={28} className={styles.dropzoneIcon} />
+                <span className={styles.dropzoneText}>
+                  Drag & drop file here, or <strong style={{ color: 'var(--primary)', textDecoration: 'underline' }}>browse</strong>
+                </span>
+                <span className={styles.dropzoneSubtext}>
+                  Supports PDF, TXT (Max size 10MB)
+                </span>
               </div>
-
-              {selectedFile && (
-                <div className={styles.filePreview}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                    <FileText size={16} className={styles.sourceIcon} />
-                    <span className={styles.fileName}>{selectedFile.name}</span>
-                  </div>
-                  <button 
-                    type="button" 
-                    className={styles.removeFileBtn}
-                    onClick={() => setSelectedFile(null)}
-                    disabled={isUploading}
-                  >
-                    Remove
-                  </button>
-                </div>
-              )}
-
-              <button 
-                type="button" 
-                className={styles.btnSubmit}
-                onClick={handleUploadFile}
-                disabled={isUploading || !selectedFile}
-              >
-                {isUploading ? (
-                  <>
-                    <Loader size={16} className={styles.spinner} />
-                    Vectorizing...
-                  </>
-                ) : (
-                  'Upload & Train'
-                )}
-              </button>
-
-              {isUploading && (
-                <div className={styles.progressContainer}>
-                  <div className={styles.progressLabel}>
-                    <span>Parsing Document</span>
-                    <span>{uploadProgress}%</span>
-                  </div>
-                  <div className={styles.progressBarTrack}>
-                    <div 
-                      className={styles.progressBarFill} 
-                      style={{ width: `${uploadProgress}%` }}
-                    />
-                  </div>
-                </div>
-              )}
             </div>
-          )}
+
+            {selectedFile && (
+              <div className={styles.filePreview}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                  <FileText size={16} className={styles.sourceIcon} />
+                  <span className={styles.fileName}>{selectedFile.name}</span>
+                </div>
+                <button 
+                  type="button" 
+                  className={styles.removeFileBtn}
+                  onClick={() => setSelectedFile(null)}
+                  disabled={isUploading}
+                >
+                  Remove
+                </button>
+              </div>
+            )}
+
+            <button 
+              type="button" 
+              className={styles.btnSubmit}
+              onClick={handleUploadFile}
+              disabled={isUploading || !selectedFile}
+            >
+              {isUploading ? (
+                <>
+                  <Loader size={16} className={styles.spinner} />
+                  Vectorizing...
+                </>
+              ) : (
+                'Upload & Train'
+              )}
+            </button>
+
+            {isUploading && (
+              <div className={styles.progressContainer}>
+                <div className={styles.progressLabel}>
+                  <span>Parsing Document</span>
+                  <span>{uploadProgress}%</span>
+                </div>
+                <div className={styles.progressBarTrack}>
+                  <div 
+                    className={styles.progressBarFill} 
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* RIGHT COLUMN: TRAINED SOURCES LIST */}
@@ -408,7 +287,7 @@ export default function KnowledgeBasePage() {
               <Database size={32} style={{ marginBottom: '12px' }} />
               <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text)', marginBottom: '4px' }}>No training sources found</h3>
               <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                {searchQuery ? 'Try matching a different search term.' : 'Get started by adding a website URL or PDF file on the left.'}
+                {searchQuery ? 'Try matching a different search term.' : 'Get started by uploading a PDF or TXT file on the left.'}
               </p>
             </div>
           ) : (

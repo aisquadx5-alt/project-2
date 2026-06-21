@@ -25,9 +25,11 @@ export default function AnalyticsPage() {
       if (session) {
         setIsSandbox(false);
         // 1. Fetch conversations
-        const { data: convs } = await supabase
+        const { data: convsData } = await supabase
           .from('conversations')
-          .select('id, status, created_at, updated_at');
+          .select('id, chatbot_id, status, visitor_name, visitor_email, page_url, created_at, updated_at, chatbots ( name )');
+        
+        const convs = convsData as any[] | null;
 
         // 2. Fetch messages count
         const { count: msgCount } = await supabase
@@ -59,16 +61,61 @@ export default function AnalyticsPage() {
           // Fetch chatbot distribution
           const { data: dbChatbots } = await supabase.from('chatbots').select('id, name');
           if (dbChatbots) {
-            // Group by chatbot
+            // Group by chatbot using real counts from convs
             const grouped = dbChatbots.map(b => {
-              // We'd query conversation counts, but we'll mock the distribution counts here based on total conversations
+              const count = convs.filter(c => c.chatbot_id === b.id).length;
               return {
                 name: b.name,
-                count: Math.round(Math.random() * totalConvs)
+                count
               };
             });
             setChatbotActivity(grouped);
           }
+
+          // Generate real recent activity logs from convs
+          const sortedConvsForLogs = [...convs].sort((a, b) => 
+            new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+          ).slice(0, 5);
+
+          const logs = sortedConvsForLogs.map(c => {
+            const visitor = c.visitor_name || c.visitor_email || 'Visitor';
+            const botName = c.chatbots?.name || 'AI Bot';
+            let msg = '';
+            let color = 'var(--primary)';
+
+            if (c.status === 'escalated') {
+              msg = `${visitor} escalated to agent (on ${botName})`;
+              color = 'var(--danger)';
+            } else if (c.status === 'closed') {
+              msg = `Ticket closed for ${visitor}`;
+              color = 'var(--text-light)';
+            } else {
+              msg = `New chat started with ${visitor} on ${c.page_url || '/'}`;
+              color = 'var(--secondary)';
+            }
+
+            // Calculate human-readable time difference
+            const diffMs = new Date().getTime() - new Date(c.updated_at).getTime();
+            const diffMin = Math.round(diffMs / 60000);
+            let timeStr = 'Just now';
+            if (diffMin > 0) {
+              if (diffMin < 60) {
+                timeStr = `${diffMin}m ago`;
+              } else if (diffMin < 1440) {
+                timeStr = `${Math.round(diffMin / 60)}h ago`;
+              } else {
+                timeStr = `${Math.round(diffMin / 1440)}d ago`;
+              }
+            }
+
+            return {
+              type: c.status,
+              msg,
+              time: timeStr,
+              color
+            };
+          });
+          setRecentLogs(logs);
         }
       } else if (demoUserStr) {
         setIsSandbox(true);
@@ -179,7 +226,7 @@ export default function AnalyticsPage() {
             <h4 className={styles.chartTitle}>Recent Activity Log</h4>
           </div>
           <div className={styles.activityList}>
-            {isSandbox ? (
+            {recentLogs.length > 0 ? (
               recentLogs.map((log, idx) => (
                 <div key={idx} className={styles.activityItem}>
                   <span className={styles.activityDot} style={{ backgroundColor: log.color }}></span>
@@ -191,8 +238,8 @@ export default function AnalyticsPage() {
               ))
             ) : (
               <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-light)' }}>
-                <CheckCircle size={24} style={{ marginBottom: '8px' }} />
-                <p style={{ fontSize: '13px' }}>System fully operational in Production.</p>
+                <CheckCircle size={24} style={{ marginBottom: '8px', color: 'var(--success)' }} />
+                <p style={{ fontSize: '13px' }}>No recent activities found.</p>
               </div>
             )}
           </div>
