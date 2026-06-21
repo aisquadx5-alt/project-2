@@ -56,7 +56,6 @@ export default function ChatbotManagerUI() {
 
   // RAG states
   const [documents, setDocuments] = useState<RagDoc[]>([]);
-  const [crawlerUrl, setCrawlerUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -353,32 +352,19 @@ export default function ChatbotManagerUI() {
     if (!files || files.length === 0) return;
     const file = files[0];
 
+    if (file.type !== 'text/plain') {
+      alert('Only TXT files are supported. PDF files are not currently supportable for direct parsing.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = async (event) => {
       const text = event.target?.result as string;
       await handleSaveDocument(file.name, text || 'Empty text document.');
       if (fileInputRef.current) fileInputRef.current.value = '';
     };
-    
-    if (file.type === 'text/plain') {
-      reader.readAsText(file);
-    } else {
-      // PDF/Other file mock text reader
-      handleSaveDocument(file.name, `[PDF Extracted Data]: Detailed FAQ references regarding ${file.name}. Standard returns policy: 30 days. Contact email support@acme.com.`);
-    }
-  };
-
-  const handleCrawlUrl = async () => {
-    if (!crawlerUrl.trim()) return;
-    try {
-      const urlObj = new URL(crawlerUrl);
-      const filename = urlObj.hostname + ' (Web crawl)';
-      const mockText = `[CRAWLED DATA - ${crawlerUrl}]: Acme corp provides standard subscription options. Standard plan is $19/month. Enterprise plans offer customizable bot thresholds, pgvector search, and RAG databases.`;
-      await handleSaveDocument(filename, mockText);
-      setCrawlerUrl('');
-    } catch {
-      alert('Please enter a valid URL.');
-    }
+    reader.readAsText(file);
   };
 
   const handleDeleteDocument = async (docId: string) => {
@@ -762,7 +748,7 @@ export default function ChatbotManagerUI() {
                     ) : (
                       <>
                         <p className={styles.tabDescription}>
-                          Upload documents or crawl website URLs. The AI will query this context to draft responses (pgvector search).
+                          Upload documents (.txt) to train your AI chatbot agent. The AI will query this context to draft responses (pgvector search).
                         </p>
 
                         {/* File upload */}
@@ -771,7 +757,7 @@ export default function ChatbotManagerUI() {
                             <input
                               type="file"
                               ref={fileInputRef}
-                              accept=".txt,.pdf"
+                              accept=".txt"
                               onChange={handleFileUpload}
                               style={{ display: 'none' }}
                             />
@@ -782,26 +768,7 @@ export default function ChatbotManagerUI() {
                               disabled={uploading}
                             >
                               <FileText size={16} />
-                              Upload TXT/PDF
-                            </button>
-                          </div>
-
-                          {/* Crawler */}
-                          <div className={styles.crawlerInput}>
-                            <input
-                              type="text"
-                              placeholder="e.g., https://example.com/pricing"
-                              value={crawlerUrl}
-                              onChange={(e) => setCrawlerUrl(e.target.value)}
-                            />
-                            <button 
-                              type="button" 
-                              className="btn btn-primary"
-                              onClick={handleCrawlUrl}
-                              disabled={uploading || !crawlerUrl}
-                            >
-                              <Link2 size={16} />
-                              Crawl URL
+                              Upload TXT Document
                             </button>
                           </div>
                         </div>
