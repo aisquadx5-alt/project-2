@@ -40,8 +40,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [router]);
 
   const handleLogout = async () => {
-    localStorage.removeItem('uipro_demo_user');
-    await logout();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn('SignOut error:', e);
+    }
+    localStorage.clear();
+    window.location.href = '/login';
   };
 
   const getPageTitle = () => {
@@ -66,13 +71,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return 'Search...';
   };
 
-  if (!user) {
-    return (
-      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}>
-        <p>Loading session...</p>
-      </div>
-    );
-  }
+  // Render layout and children immediately to bypass blocked loading state
 
   return (
     <div className={styles.layoutContainer}>
