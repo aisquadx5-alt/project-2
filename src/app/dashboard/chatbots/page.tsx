@@ -190,82 +190,54 @@ export default function ChatbotsPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Save Chatbot
-  const handleSaveChatbot = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Save Chatbot (Form Action)
+  const handleSubmit = async (actionFormData: FormData) => {
     setLoading(true);
-
-    const botPayload = {
-      name: formData.name,
-      description: formData.description,
-      system_prompt: formData.system_prompt,
-      status: formData.status,
-      widget_color: formData.widget_color,
-      avatar_url: currentChatbot ? currentChatbot.avatar_url : null,
-      domain_allowlist: formData.domain_allowlist,
-      pre_chat_enabled: formData.pre_chat_enabled,
-      pre_chat_fields: formData.pre_chat_fields,
-      welcome_message: formData.welcome_message,
-      tone_of_voice: formData.tone_of_voice,
-      starter_questions: formData.starter_questions,
-    };
-
-    if (isSandbox) {
-      let updatedList = [...chatbots];
-      
+    try {
       if (currentChatbot) {
         // Edit mode
-        updatedList = chatbots.map((b) => 
-          b.id === currentChatbot.id ? { ...b, ...botPayload } : b
-        );
-      } else {
-        // Create mode
-        const newBot: Chatbot = {
-          id: generateId('bot'),
-          ...botPayload,
+        const botPayload = {
+          name: actionFormData.get('name') as string || formData.name,
+          description: actionFormData.get('description') as string || formData.description,
+          system_prompt: actionFormData.get('system_prompt') as string || formData.system_prompt,
+          status: (actionFormData.get('status') as 'active' | 'inactive') || formData.status,
+          widget_color: actionFormData.get('widget_color') as string || formData.widget_color,
+          avatar_url: currentChatbot.avatar_url || null,
+          domain_allowlist: actionFormData.get('domain_allowlist') as string || formData.domain_allowlist,
+          pre_chat_enabled: actionFormData.get('pre_chat_enabled') === 'true',
+          pre_chat_fields: JSON.parse(actionFormData.get('pre_chat_fields') as string || '{}'),
+          welcome_message: actionFormData.get('welcome_message') as string || formData.welcome_message,
+          tone_of_voice: actionFormData.get('tone_of_voice') as string || formData.tone_of_voice,
+          starter_questions: JSON.parse(actionFormData.get('starter_questions') as string || '[]'),
         };
-        updatedList.unshift(newBot);
-      }
-      
-      localStorage.setItem('uipro_sandbox_chatbots', JSON.stringify(updatedList));
-      setChatbots(updatedList);
-      setShowFormModal(false);
-    } else {
-      if (currentChatbot) {
-        // Edit mode
-        const res = await updateChatbot(currentChatbot.id, botPayload);
-        
-        if (res.success && res.chatbot) {
-          setChatbots(chatbots.map(b => b.id === currentChatbot.id ? { ...b, ...botPayload } : b));
+
+        if (isSandbox) {
+          const updatedList = chatbots.map((b) => 
+            b.id === currentChatbot.id ? { ...b, ...botPayload } : b
+          );
+          localStorage.setItem('uipro_sandbox_chatbots', JSON.stringify(updatedList));
+          setChatbots(updatedList);
           setShowFormModal(false);
         } else {
-          alert(res.error || 'Failed to update chatbot.');
+          const res = await updateChatbot(currentChatbot.id, botPayload);
+          if (res.success && res.chatbot) {
+            setChatbots(chatbots.map(b => b.id === currentChatbot.id ? { ...b, ...botPayload } : b));
+            setShowFormModal(false);
+          } else {
+            alert(res.error || 'Failed to update chatbot.');
+          }
         }
       } else {
         // Create mode
-        const actionFormData = new FormData();
-        actionFormData.append('name', formData.name);
-        actionFormData.append('description', formData.description);
-        actionFormData.append('system_prompt', formData.system_prompt);
-        actionFormData.append('status', formData.status);
-        actionFormData.append('widget_color', formData.widget_color);
-        actionFormData.append('domain_allowlist', formData.domain_allowlist);
-        actionFormData.append('pre_chat_enabled', String(formData.pre_chat_enabled));
-        actionFormData.append('pre_chat_fields', JSON.stringify(formData.pre_chat_fields));
-        actionFormData.append('welcome_message', formData.welcome_message);
-        actionFormData.append('tone_of_voice', formData.tone_of_voice);
-        actionFormData.append('starter_questions', JSON.stringify(formData.starter_questions));
-
-        try {
-          const newBot = await createChatbotAction(actionFormData);
-          setChatbots([newBot as any, ...chatbots]);
-          setShowFormModal(false);
-        } catch (err: any) {
-          alert(err.message || 'Failed to create chatbot.');
-        }
+        await createChatbotAction(actionFormData);
+        alert("Success!"); // Let me see it succeeded
+        window.location.reload(); // Quick refresh to show new data
       }
+    } catch (error: any) {
+      alert("FAILED: " + error.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // Delete Chatbot
@@ -533,7 +505,10 @@ export default function ChatbotsPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSaveChatbot}>
+            <form action={handleSubmit}>
+              <input type="hidden" name="pre_chat_enabled" value={String(formData.pre_chat_enabled)} />
+              <input type="hidden" name="pre_chat_fields" value={JSON.stringify(formData.pre_chat_fields)} />
+              <input type="hidden" name="starter_questions" value={JSON.stringify(formData.starter_questions)} />
               <div className={styles.modalBody}>
 
                 {/* TAB 1: BASIC SETTINGS */}
@@ -543,6 +518,7 @@ export default function ChatbotsPage() {
                       <label>Agent Name</label>
                       <input
                         type="text"
+                        name="name"
                         required
                         placeholder="e.g. Acme Billing Bot"
                         value={formData.name}
@@ -554,6 +530,7 @@ export default function ChatbotsPage() {
                       <label>Short Description</label>
                       <input
                         type="text"
+                        name="description"
                         placeholder="Briefly describe what this agent handles"
                         value={formData.description}
                         onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
@@ -565,6 +542,7 @@ export default function ChatbotsPage() {
                         <label>Branding Accent Color</label>
                         <input
                           type="color"
+                          name="widget_color"
                           value={formData.widget_color}
                           onChange={(e) => setFormData(prev => ({ ...prev, widget_color: e.target.value }))}
                           style={{ height: '40px', padding: '4px', cursor: 'pointer', width: '100%' }}
@@ -573,6 +551,7 @@ export default function ChatbotsPage() {
                       <div className={styles.formGroup}>
                         <label>Status</label>
                         <select
+                          name="status"
                           value={formData.status}
                           onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as any }))}
                         >
@@ -589,6 +568,7 @@ export default function ChatbotsPage() {
                       </div>
                       <input
                         type="text"
+                        name="domain_allowlist"
                         placeholder="e.g., example.com, myapp.net (or * for all)"
                         value={formData.domain_allowlist}
                         onChange={(e) => setFormData(prev => ({ ...prev, domain_allowlist: e.target.value }))}
@@ -622,6 +602,7 @@ export default function ChatbotsPage() {
                       <label>Welcome Message</label>
                       <input
                         type="text"
+                        name="welcome_message"
                         required
                         placeholder="e.g., Hi! How can we help you today?"
                         value={formData.welcome_message}
@@ -635,6 +616,7 @@ export default function ChatbotsPage() {
                     <div className={styles.formGroup}>
                       <label>Tone of Voice</label>
                       <select
+                        name="tone_of_voice"
                         value={formData.tone_of_voice}
                         onChange={(e) => setFormData(prev => ({ ...prev, tone_of_voice: e.target.value }))}
                       >
@@ -651,6 +633,7 @@ export default function ChatbotsPage() {
                     <div className={styles.formGroup}>
                       <label>System Prompt (AI Persona & Guidelines)</label>
                       <textarea
+                        name="system_prompt"
                         rows={5}
                         required
                         placeholder="Define instructions, personality, limits and how to handle customer issues..."
