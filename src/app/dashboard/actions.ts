@@ -5,7 +5,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-async function getSupabaseClient(token?: string) {
+async function getSupabaseClient() {
   const cookieStore = await cookies();
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,11 +25,6 @@ async function getSupabaseClient(token?: string) {
           }
         },
       },
-      global: token ? {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      } : undefined,
     }
   );
 }
@@ -49,14 +44,12 @@ export async function logout() {
 }
 
 export async function createChatbotAction(formData: FormData) {
-  const token = formData.get('access_token') as string;
-  const supabase = await getSupabaseClient(token);
-
-  // 1. Get current logged-in user
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    throw new Error("You must be logged in to create a chatbot.");
+  const providedUserId = formData.get('user_id') as string;
+  if (!providedUserId) {
+    throw new Error("You must be logged in (user_id is missing) to create a chatbot.");
   }
+
+  const supabase = await getSupabaseClient();
 
   const name = formData.get('name') as string;
   const description = formData.get('description') as string;
@@ -85,7 +78,7 @@ export async function createChatbotAction(formData: FormData) {
     welcome_message: welcomeMessage || 'Hi! How can we help you today?',
     tone_of_voice: toneOfVoice || 'professional',
     starter_questions: starterQuestions,
-    user_id: user.id,
+    user_id: providedUserId,
   };
 
   let { data, error } = await supabase
@@ -96,7 +89,7 @@ export async function createChatbotAction(formData: FormData) {
 
   if (error && (error.message.includes('column "user_id" does not exist') || error.code === '42703')) {
     delete insertPayload.user_id;
-    insertPayload.owner_id = user.id;
+    insertPayload.owner_id = providedUserId;
 
     const fallbackResult = await supabase
       .from('chatbots')
@@ -128,13 +121,17 @@ export async function updateChatbot(id: string, botPayload: {
   welcome_message: string;
   tone_of_voice: string;
   starter_questions: string[];
-}, token?: string) {
+}, providedUserId?: string) {
   try {
-    const supabase = await getSupabaseClient(token);
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      return { error: 'Unauthorized: No active user session.' };
+    const supabase = await getSupabaseClient();
+    
+    let activeUserId = providedUserId;
+    if (!activeUserId) {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        return { error: 'Unauthorized: No active user session.' };
+      }
+      activeUserId = user.id;
     }
 
     const { data, error } = await supabase
@@ -153,7 +150,7 @@ export async function updateChatbot(id: string, botPayload: {
         starter_questions: botPayload.starter_questions || [],
       })
       .eq('id', id)
-      .eq('owner_id', user.id)
+      .eq('owner_id', activeUserId)
       .select()
       .single();
 
@@ -169,20 +166,24 @@ export async function updateChatbot(id: string, botPayload: {
   }
 }
 
-export async function deleteChatbot(id: string, token?: string) {
+export async function deleteChatbot(id: string, providedUserId?: string) {
   try {
-    const supabase = await getSupabaseClient(token);
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      return { error: 'Unauthorized: No active user session.' };
+    const supabase = await getSupabaseClient();
+    
+    let activeUserId = providedUserId;
+    if (!activeUserId) {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        return { error: 'Unauthorized: No active user session.' };
+      }
+      activeUserId = user.id;
     }
 
     const { error } = await supabase
       .from('chatbots')
       .delete()
       .eq('id', id)
-      .eq('owner_id', user.id);
+      .eq('owner_id', activeUserId);
 
     if (error) {
       console.error('Error deleting chatbot:', error);

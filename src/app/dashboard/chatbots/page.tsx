@@ -194,13 +194,15 @@ export default function ChatbotsPage() {
   const handleSubmit = async (actionFormData: FormData) => {
     setLoading(true);
     try {
-      // Get the current session client-side to pass the token as a fallback
-      let clientToken: string | undefined;
+      // Fetch user ID directly from client
+      let clientUserId = userId;
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        clientToken = session?.access_token || undefined;
-      } catch (e) {
-        console.warn('Failed to retrieve access token:', e);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id) {
+          clientUserId = user.id;
+        }
+      } catch (authErr) {
+        console.warn("Failed to get user directly from client:", authErr);
       }
 
       if (currentChatbot) {
@@ -228,7 +230,7 @@ export default function ChatbotsPage() {
           setChatbots(updatedList);
           setShowFormModal(false);
         } else {
-          const res = await updateChatbot(currentChatbot.id, botPayload, clientToken);
+          const res = await updateChatbot(currentChatbot.id, botPayload, clientUserId);
           if (res.success && res.chatbot) {
             setChatbots(chatbots.map(b => b.id === currentChatbot.id ? { ...b, ...botPayload } : b));
             setShowFormModal(false);
@@ -238,8 +240,8 @@ export default function ChatbotsPage() {
         }
       } else {
         // Create mode
-        if (clientToken) {
-          actionFormData.append('access_token', clientToken);
+        if (clientUserId) {
+          actionFormData.append('user_id', clientUserId);
         }
         await createChatbotAction(actionFormData);
         alert("Success!"); // Let me see it succeeded
@@ -262,15 +264,17 @@ export default function ChatbotsPage() {
       localStorage.setItem('uipro_sandbox_chatbots', JSON.stringify(updatedList));
       setChatbots(updatedList);
     } else {
-      let clientToken: string | undefined;
+      let clientUserId = userId;
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        clientToken = session?.access_token || undefined;
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id) {
+          clientUserId = user.id;
+        }
       } catch (e) {
-        console.warn('Failed to retrieve access token:', e);
+        console.warn('Failed to retrieve user ID:', e);
       }
 
-      const res = await deleteChatbot(id, clientToken);
+      const res = await deleteChatbot(id, clientUserId);
       
       if (res.success) {
         setChatbots(chatbots.filter(b => b.id !== id));
