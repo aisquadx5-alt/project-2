@@ -59,6 +59,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
   const [preChatData, setPreChatData] = useState({ name: '', email: '' });
   const [isBotPaused, setIsBotPaused] = useState(false);
   const [isEscalated, setIsEscalated] = useState(false);
+  const [localInput, setLocalInput] = useState('');
   
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -317,8 +318,8 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
   // Custom send handler to intercept manual override (isBotPaused) state
   const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Send Button Clicked. Input:", input);
-    const userMsgContent = input;
+    console.log("Send Button Clicked. Input (useChat):", input, "localInput:", localInput);
+    const userMsgContent = localInput;
     if (!(userMsgContent || '').trim() || !visitorSupabase) return;
 
     try {
@@ -333,6 +334,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
       }
 
       if (isBotPaused) {
+        setLocalInput('');
         setInput('');
         
         // Add user message to UI immediately
@@ -356,13 +358,14 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
         }
       } else {
         // Standard AI stream submit
-        setInput(''); // Clear input manually
         handleSubmit(e, {
           body: {
             conversationId: activeConv.id,
             chatbotId: safeChatbot.id,
           }
         } as any);
+        setLocalInput('');
+        setInput(''); // Clear input manually
       }
     } catch (err: any) {
       console.error("Error in handleSendMessage:", err);
@@ -387,7 +390,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
   // Force chat window open unconditionally inside this iframe view for the presentation
   // (We do not render the minimized bubble launcher button inside the iframe)
 
-  console.log("WidgetClient Render. Input:", input);
+  console.log("WidgetClient Render. Input:", input, "localInput:", localInput);
 
   // EXPANDED STATE (Chat Window)
   return (
@@ -561,8 +564,11 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
               type="text"
               className={styles.chatInput}
               placeholder={isBotPaused ? "Message agent..." : "Type your message..."}
-              value={input}
-              onChange={handleInputChange}
+              value={localInput}
+              onChange={(e) => {
+                setLocalInput(e.target.value);
+                handleInputChange(e);
+              }}
               disabled={showPreChat}
               style={{ backgroundColor: '#ffffff', color: '#000000', border: '1px solid #e5e7eb' }}
             />
@@ -570,7 +576,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
               type="submit" 
               className={styles.sendBtn}
               style={{ backgroundColor: widgetColor }}
-              disabled={!(input || '').trim()}
+              disabled={!localInput.trim()}
               aria-label="Send Message"
             >
               <Send size={16} color="#ffffff" />
