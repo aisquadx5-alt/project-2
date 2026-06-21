@@ -1,15 +1,18 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient as createRawClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 // Standard client for authenticated dashboard/server calls
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = typeof window !== 'undefined'
+  ? createBrowserClient(supabaseUrl, supabaseAnonKey)
+  : createRawClient(supabaseUrl, supabaseAnonKey);
 
 // Helper to create a client for a specific visitor session
 // This injects the 'x-session-id' header which is required by our Row Level Security (RLS) policies
 export function createVisitorSupabaseClient(sessionId: string) {
-  return createClient(supabaseUrl, supabaseAnonKey, {
+  return createRawClient(supabaseUrl, supabaseAnonKey, {
     global: {
       headers: {
         'x-session-id': sessionId,

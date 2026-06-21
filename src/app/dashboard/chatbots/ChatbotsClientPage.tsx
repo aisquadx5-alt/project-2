@@ -1,17 +1,11 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 import { Plus, Edit2, Trash2, Code, Copy, Check, X, Bot, Shield, Terminal, FileText, Link2, BookOpen, Sparkles, Volume2 } from 'lucide-react';
 import Badge from '@/components/Badge';
 import { createChatbotAction, updateChatbot, deleteChatbot, linkChatbotOwnershipAction } from '../actions';
 import styles from './chatbots.module.css';
-
-// Initialize strictly client-side
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 export interface Chatbot {
   id: string;

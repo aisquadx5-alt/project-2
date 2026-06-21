@@ -104,7 +104,7 @@ export async function POST(req: Request) {
     const sortedHistory = (history || []).reverse();
 
     // Map history to SDK CoreMessage format
-    const messages = sortedHistory.map((m) => ({
+    const messages = sortedHistory.map((m: any) => ({
       role: m.sender === 'user' ? ('user' as const) : ('assistant' as const),
       content: m.content,
     }));
