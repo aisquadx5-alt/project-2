@@ -19,13 +19,10 @@ export async function login(formData: FormData) {
     });
 
     if (error) {
-      // If Supabase is unconfigured or credentials fail, allow local sandbox fallback
+      // If Supabase is unconfigured, allow local sandbox fallback
       if (
         error.message.includes('API key') || 
-        error.message.includes('fetch') || 
-        error.status === 400 || 
-        error.status === 401 ||
-        error.message.includes('Invalid login credentials')
+        error.message.includes('fetch')
       ) {
         const cookieStore = await cookies();
         cookieStore.set('uipro_demo_auth', 'true', { path: '/' });
