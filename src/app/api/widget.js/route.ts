@@ -40,44 +40,44 @@ export async function GET() {
 
   // 1. Create Launcher Button (Floating Circle Bubble)
   const launcher = document.createElement('div');
-  launcher.style.position = 'fixed';
-  launcher.style.bottom = '20px';
-  launcher.style.right = '20px';
-  launcher.style.zIndex = '999999';
-  launcher.style.borderRadius = '50%';
-  launcher.style.cursor = 'pointer';
-  launcher.style.background = '#0F172A';
-  launcher.style.width = '60px';
-  launcher.style.height = '60px';
-  launcher.style.boxShadow = '0 4px 10px rgba(0,0,0,0.2)';
-  launcher.style.display = 'flex';
-  launcher.style.alignItems = 'center';
-  launcher.style.justifyContent = 'center';
-  launcher.style.transition = 'transform 0.2s ease';
+  launcher.style.setProperty('position', 'fixed', 'important');
+  launcher.style.setProperty('bottom', '20px', 'important');
+  launcher.style.setProperty('right', '20px', 'important');
+  launcher.style.setProperty('z-index', '999999', 'important');
+  launcher.style.setProperty('border-radius', '50%', 'important');
+  launcher.style.setProperty('cursor', 'pointer', 'important');
+  launcher.style.setProperty('background', '#0F172A', 'important');
+  launcher.style.setProperty('width', '60px', 'important');
+  launcher.style.setProperty('height', '60px', 'important');
+  launcher.style.setProperty('box-shadow', '0 4px 10px rgba(0,0,0,0.2)', 'important');
+  launcher.style.setProperty('display', 'flex', 'important');
+  launcher.style.setProperty('align-items', 'center', 'important');
+  launcher.style.setProperty('justify-content', 'center', 'important');
+  launcher.style.setProperty('transition', 'transform 0.2s ease', 'important');
 
   // SVG Chat Icon
   launcher.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
   
   launcher.onmouseover = function() {
-    launcher.style.transform = 'scale(1.05)';
+    launcher.style.setProperty('transform', 'scale(1.05)', 'important');
   };
   launcher.onmouseout = function() {
-    launcher.style.transform = 'scale(1)';
+    launcher.style.setProperty('transform', 'scale(1)', 'important');
   };
 
   // 2. Create Iframe Container
   const container = document.createElement('div');
-  container.style.position = 'fixed';
-  container.style.bottom = '90px';
-  container.style.right = '20px';
-  container.style.width = '350px';
-  container.style.height = '500px';
-  container.style.zIndex = '999999';
-  container.style.borderRadius = '12px';
-  container.style.boxShadow = '0 10px 20px rgba(0,0,0,0.2)';
-  container.style.overflow = 'hidden';
-  container.style.display = 'none';
-  container.style.border = 'none';
+  container.style.setProperty('position', 'fixed', 'important');
+  container.style.setProperty('bottom', '90px', 'important');
+  container.style.setProperty('right', '20px', 'important');
+  container.style.setProperty('width', '350px', 'important');
+  container.style.setProperty('height', '500px', 'important');
+  container.style.setProperty('z-index', '999999', 'important');
+  container.style.setProperty('border-radius', '12px', 'important');
+  container.style.setProperty('box-shadow', '0 10px 20px rgba(0,0,0,0.2)', 'important');
+  container.style.setProperty('overflow', 'hidden', 'important');
+  container.style.setProperty('display', 'none', 'important');
+  container.style.setProperty('border', 'none', 'important');
 
   // Create Iframe inside Container
   const iframe = document.createElement('iframe');
@@ -107,11 +107,11 @@ export async function GET() {
   launcher.addEventListener('click', function() {
     isOpen = !isOpen;
     if (isOpen) {
-      container.style.display = 'block';
+      container.style.setProperty('display', 'block', 'important');
       // Change SVG icon to X Close
       launcher.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
     } else {
-      container.style.display = 'none';
+      container.style.setProperty('display', 'none', 'important');
       // Change SVG icon back to Chat Bubble
       launcher.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
     }
@@ -127,7 +127,7 @@ export async function GET() {
       // If widget minimizes inside the iframe (by clicking close button), sync state
       if (!data.open) {
         isOpen = false;
-        container.style.display = 'none';
+        container.style.setProperty('display', 'none', 'important');
         launcher.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
       }
     }
@@ -137,7 +137,7 @@ export async function GET() {
   return new NextResponse(jsCode, {
     headers: {
       'Content-Type': 'application/javascript',
-      'Cache-Control': 'public, max-age=3600, stale-while-revalidate=600',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
     },
   });
 }

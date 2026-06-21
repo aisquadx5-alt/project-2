@@ -134,32 +134,43 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
 
   // Helper to create conversation
   const createConversation = async (name?: string, email?: string) => {
-    if (!visitorSupabase) return;
+    if (!visitorSupabase) return null;
 
     const userAgent = typeof window !== 'undefined' ? navigator.userAgent : '';
     const browserName = userAgent.includes('Chrome') ? 'Chrome' : 
                         userAgent.includes('Safari') ? 'Safari' : 
                         userAgent.includes('Firefox') ? 'Firefox' : 'Browser';
 
-    const { data: newConv, error } = await visitorSupabase
-      .from('conversations')
-      .insert({
-        chatbot_id: safeChatbot.id,
-        session_id: safeSessionId,
-        visitor_name: name || null,
-        visitor_email: email || null,
-        browser: browserName,
-        page_url: initialHostUrl || '',
-      })
-      .select()
-      .single();
+    try {
+      const { data: newConv, error } = await visitorSupabase
+        .from('conversations')
+        .insert({
+          chatbot_id: safeChatbot.id,
+          session_id: safeSessionId,
+          visitor_name: name || null,
+          visitor_email: email || null,
+          browser: browserName,
+          page_url: initialHostUrl || '',
+        })
+        .select()
+        .single();
 
-    if (newConv) {
-      setConversation(newConv);
-      setShowPreChat(false);
-    } else {
-      console.error('Failed to initialize conversation:', error);
+      if (error) {
+        console.error('Database conversation initialization failed:', error);
+        alert('Database conversation initialization failed: ' + error.message);
+        return null;
+      }
+
+      if (newConv) {
+        setConversation(newConv);
+        setShowPreChat(false);
+        return newConv;
+      }
+    } catch (err: any) {
+      console.error('Error creating conversation:', err);
+      alert('Error creating conversation: ' + err.message);
     }
+    return null;
   };
 
   // 1. Initial Load: Check if conversation exists
@@ -306,30 +317,55 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
   // Custom send handler to intercept manual override (isBotPaused) state
   const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!(input || '').trim() || !conversation?.id || !visitorSupabase) return;
+    const userMsgContent = input;
+    if (!(userMsgContent || '').trim() || !visitorSupabase) return;
 
-    if (isBotPaused) {
-      const userMsgContent = input;
-      setInput('');
+    try {
+      let activeConv = conversation;
+      
+      // If conversation is missing, gracefully create a new one first!
+      if (!activeConv?.id) {
+        activeConv = await createConversation();
+        if (!activeConv?.id) {
+          throw new Error("Unable to establish chat session with the server.");
+        }
+      }
 
-      // Add user message to UI immediately
-      const tempId = generateTempId();
-      setMessages((prev: any) => [
-        ...prev,
-        { id: tempId, role: 'user', content: userMsgContent, createdAt: new Date() }
-      ]);
+      if (isBotPaused) {
+        setInput('');
+        
+        // Add user message to UI immediately
+        const tempId = generateTempId();
+        setMessages((prev: any) => [
+          ...prev,
+          { id: tempId, role: 'user', content: userMsgContent, createdAt: new Date() }
+        ]);
 
-      // Save user message to Supabase (agent will reply to this)
-      await visitorSupabase
-        .from('messages')
-        .insert({
-          conversation_id: conversation.id,
-          sender: 'user',
-          content: userMsgContent
-        });
-    } else {
-      // Standard AI stream submit
-      handleSubmit(e);
+        // Save user message to Supabase (agent will reply to this)
+        const { error: insertError } = await visitorSupabase
+          .from('messages')
+          .insert({
+            conversation_id: activeConv.id,
+            sender: 'user',
+            content: userMsgContent
+          });
+
+        if (insertError) {
+          throw new Error("Failed to save message to database: " + insertError.message);
+        }
+      } else {
+        // Standard AI stream submit
+        setInput(''); // Clear input manually
+        handleSubmit(e, {
+          body: {
+            conversationId: activeConv.id,
+            chatbotId: safeChatbot.id,
+          }
+        } as any);
+      }
+    } catch (err: any) {
+      console.error("Error in handleSendMessage:", err);
+      alert("Error sending message: " + err.message);
     }
   };
 
