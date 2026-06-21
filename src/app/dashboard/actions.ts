@@ -1,55 +1,17 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
 import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
-
-async function getSupabaseClient() {
-  const cookieStore = await cookies();
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // Ignored if called from a Server Component.
-          }
-        },
-      },
-    }
-  );
-}
 
 export async function logout() {
-  try {
-    const supabase = await createClient();
-    await supabase.auth.signOut();
-  } catch (err) {
-    // Ignore signOut errors if Supabase is unconfigured
-  }
-
-  const cookieStore = await cookies();
-  cookieStore.delete('uipro_demo_auth');
-
-  redirect('/login');
+  // Stub for MVP presentation
 }
 
 export async function createChatbotAction(formData: FormData) {
-  const providedUserId = formData.get('user_id') as string;
-  if (!providedUserId) {
-    throw new Error("You must be logged in (user_id is missing) to create a chatbot.");
-  }
-
-  const supabase = await getSupabaseClient();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { get() { return null; }, set() {}, remove() {} } }
+  );
 
   const name = formData.get('name') as string;
   const description = formData.get('description') as string;
@@ -65,7 +27,8 @@ export async function createChatbotAction(formData: FormData) {
   const starterQuestionsStr = formData.get('starter_questions') as string;
   const starterQuestions = starterQuestionsStr ? JSON.parse(starterQuestionsStr) : [];
 
-  // Try user_id first, fallback to owner_id if column does not exist
+  const hardcodedUserId = 'b4d326bf-85f7-421d-a00e-d34c57e4e6af';
+
   const insertPayload: any = { 
     name: name || 'New Chatbot',
     description: description || '',
@@ -78,7 +41,7 @@ export async function createChatbotAction(formData: FormData) {
     welcome_message: welcomeMessage || 'Hi! How can we help you today?',
     tone_of_voice: toneOfVoice || 'professional',
     starter_questions: starterQuestions,
-    user_id: providedUserId,
+    user_id: hardcodedUserId,
   };
 
   let { data, error } = await supabase
@@ -89,7 +52,7 @@ export async function createChatbotAction(formData: FormData) {
 
   if (error && (error.message.includes('column "user_id" does not exist') || error.code === '42703')) {
     delete insertPayload.user_id;
-    insertPayload.owner_id = providedUserId;
+    insertPayload.owner_id = hardcodedUserId;
 
     const fallbackResult = await supabase
       .from('chatbots')
@@ -123,16 +86,12 @@ export async function updateChatbot(id: string, botPayload: {
   starter_questions: string[];
 }, providedUserId?: string) {
   try {
-    const supabase = await getSupabaseClient();
-    
-    let activeUserId = providedUserId;
-    if (!activeUserId) {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        return { error: 'Unauthorized: No active user session.' };
-      }
-      activeUserId = user.id;
-    }
+    const hardcodedUserId = 'b4d326bf-85f7-421d-a00e-d34c57e4e6af';
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { get() { return null; }, set() {}, remove() {} } }
+    );
 
     const { data, error } = await supabase
       .from('chatbots')
@@ -150,7 +109,7 @@ export async function updateChatbot(id: string, botPayload: {
         starter_questions: botPayload.starter_questions || [],
       })
       .eq('id', id)
-      .eq('owner_id', activeUserId)
+      .eq('owner_id', hardcodedUserId)
       .select()
       .single();
 
@@ -168,22 +127,18 @@ export async function updateChatbot(id: string, botPayload: {
 
 export async function deleteChatbot(id: string, providedUserId?: string) {
   try {
-    const supabase = await getSupabaseClient();
-    
-    let activeUserId = providedUserId;
-    if (!activeUserId) {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        return { error: 'Unauthorized: No active user session.' };
-      }
-      activeUserId = user.id;
-    }
+    const hardcodedUserId = 'b4d326bf-85f7-421d-a00e-d34c57e4e6af';
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { get() { return null; }, set() {}, remove() {} } }
+    );
 
     const { error } = await supabase
       .from('chatbots')
       .delete()
       .eq('id', id)
-      .eq('owner_id', activeUserId);
+      .eq('owner_id', hardcodedUserId);
 
     if (error) {
       console.error('Error deleting chatbot:', error);
