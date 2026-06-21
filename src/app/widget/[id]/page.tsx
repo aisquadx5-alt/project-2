@@ -1,5 +1,6 @@
 import { headers } from 'next/headers';
 import { supabase } from '@/lib/supabase';
+import crypto from 'crypto';
 import WidgetClient from './WidgetClient';
 import styles from './widget.module.css';
 
@@ -57,11 +58,20 @@ export default async function WidgetPage({ params, searchParams }: Props) {
   const isDomainAllowed = true;
 
   // 3. Render the client widget container passing validated configuration
+  let safeSessionId = sessionId;
+  if (!safeSessionId || safeSessionId.length !== 36) {
+    try {
+      safeSessionId = crypto.randomUUID();
+    } catch {
+      safeSessionId = 'b4d326bf-85f7-421d-a00e-d34c57e4e6af';
+    }
+  }
+
   return (
     <main className={styles.widgetMain}>
       <WidgetClient
         chatbot={safeChatbot}
-        sessionId={sessionId || 'demo-session-id'}
+        sessionId={safeSessionId}
         initialHostUrl={hostUrl || ''}
       />
     </main>

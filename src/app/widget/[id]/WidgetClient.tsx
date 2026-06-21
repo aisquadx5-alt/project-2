@@ -29,8 +29,20 @@ function generateTempId() {
 }
 
 export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: WidgetClientProps) {
-  // Safe fallback configuration variables
-  const safeSessionId = sessionId || 'demo-session-id';
+  // Safe fallback configuration variables: generate a real UUID if sessionId is missing/invalid
+  const safeSessionId = useMemo(() => {
+    if (sessionId && sessionId.length === 36 && sessionId.split('-').length === 5) return sessionId;
+    if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
+      try {
+        return window.crypto.randomUUID();
+      } catch {}
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }, [sessionId]);
   const safeChatbot = chatbot || {} as any;
   const widgetColor = safeChatbot.widget_color || (safeChatbot as any).branding_color || '#7C3AED';
   const chatbotName = safeChatbot.name || 'AI Support Agent';
@@ -294,7 +306,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
   // Custom send handler to intercept manual override (isBotPaused) state
   const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!input.trim() || !conversation?.id || !visitorSupabase) return;
+    if (!(input || '').trim() || !conversation?.id || !visitorSupabase) return;
 
     if (isBotPaused) {
       const userMsgContent = input;
@@ -519,7 +531,7 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
               type="submit" 
               className={styles.sendBtn}
               style={{ backgroundColor: widgetColor }}
-              disabled={!input.trim() || showPreChat}
+              disabled={!(input || '').trim() || showPreChat}
               aria-label="Send Message"
             >
               <Send size={16} color="#ffffff" />
