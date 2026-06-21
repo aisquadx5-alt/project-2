@@ -147,7 +147,7 @@ export async function POST(req: Request) {
 
     // 5. Initialize streaming via Vercel AI SDK
     const result = streamText({
-      model: openrouter(modelName),
+      model: openrouter.chat(modelName),
       system: systemPrompt,
       messages: messages,
       maxOutputTokens: 1024,
