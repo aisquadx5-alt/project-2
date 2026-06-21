@@ -150,6 +150,7 @@ export async function POST(req: Request) {
       model: openrouter(modelName),
       system: systemPrompt,
       messages: messages,
+      maxOutputTokens: 1024,
       tools: {
         escalate_to_human: {
           description: 'Escalate this conversation to a human support agent when the user requests a person, live support, representative, or is frustrated and needs human assistance.',

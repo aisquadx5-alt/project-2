@@ -364,7 +364,6 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
         while (newlineIndex !== -1) {
           const line = buffer.substring(0, newlineIndex).trim();
           buffer = buffer.substring(newlineIndex + 1);
-          
           // Vercel AI SDK Data Stream Protocol:
           // Text chunk format is: 0:"text"
           if (line.startsWith('0:')) {
@@ -379,8 +378,30 @@ export default function WidgetClient({ chatbot, sessionId, initialHostUrl }: Wid
             } catch (parseErr) {
               console.warn("Failed to parse stream line:", line, parseErr);
             }
+          } else if (line.startsWith('data:')) {
+            const dataStr = line.substring(5).trim();
+            if (dataStr && dataStr !== '[DONE]') {
+              try {
+                const parsed = JSON.parse(dataStr);
+                if (parsed.type === 'text-delta' && typeof parsed.delta === 'string') {
+                  botContent += parsed.delta;
+                  
+                  // Update the message in UI
+                  setMessages((prev: any) => prev.map((m: any) => 
+                    m.id === botMsgId ? { ...m, content: botContent } : m
+                  ));
+                } else if (parsed.type === 'error') {
+                  console.error("Stream returned error:", parsed.errorText);
+                  botContent += `\n[Error: ${parsed.errorText || 'An error occurred during streaming'}]`;
+                  setMessages((prev: any) => prev.map((m: any) => 
+                    m.id === botMsgId ? { ...m, content: botContent } : m
+                  ));
+                }
+              } catch (parseErr) {
+                console.warn("Failed to parse SSE JSON:", dataStr, parseErr);
+              }
+            }
           }
-          
           newlineIndex = buffer.indexOf('\n');
         }
       }
